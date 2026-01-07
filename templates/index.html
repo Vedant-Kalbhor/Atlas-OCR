@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engineering Drawing Dimension Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 40px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95em;
+        }
+        
+        .upload-section {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            background: #f8f9ff;
+            transition: all 0.3s;
+        }
+        
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+            color: #667eea;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .file-label {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: background 0.3s;
+        }
+        
+        .file-label:hover {
+            background: #764ba2;
+        }
+        
+        .file-name {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .analyze-btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.3s;
+        }
+        
+        .analyze-btn:hover:not(:disabled) {
+            background: #764ba2;
+        }
+        
+        .analyze-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 12px 30px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.3s;
+            margin-top: 15px;
+        }
+        
+        .download-btn:hover {
+            background: #218838;
+        }
+        
+        .loading {
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .results h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        
+        .results-content {
+            color: #444;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        
+        .preview-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            overflow-x: auto;
+            display: block;
+        }
+        
+        .preview-table table {
+            width: 100%;
+            min-width: 600px;
+        }
+        
+        .preview-table th,
+        .preview-table td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+        
+        .preview-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .preview-table tr:nth-child(even) {
+            background: #f8f9ff;
+        }
+        
+        .error {
+            background: #ffe6e6;
+            border-left-color: #ff4444;
+        }
+        
+        .error h2 {
+            color: #cc0000;
+        }
+        
+        .download-section {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📐 Dimension Extractor</h1>
+        <p class="subtitle">Upload engineering drawings to extract dimensions using AI</p>
+        
+        <div class="upload-section">
+            <div class="upload-icon">📄</div>
+            <label for="file-input" class="file-label">Choose File</label>
+            <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp">
+            <div class="file-name" id="file-name">No file chosen</div>
+        </div>
+        
+        <button class="analyze-btn" id="analyze-btn" disabled>Analyze Drawing</button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px; color: #666;">Analyzing document...</p>
+        </div>
+        
+        <div class="results" id="results">
+            <h2>Extracted Dimensions</h2>
+            <div class="results-content" id="results-content"></div>
+            
+            <div class="download-section" id="download-section" style="display: none;">
+                <a href="#" class="download-btn" id="download-btn">
+                    📥 Download Excel File
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const fileName = document.getElementById('file-name');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        const resultsContent = document.getElementById('results-content');
+        const downloadSection = document.getElementById('download-section');
+        const downloadBtn = document.getElementById('download-btn');
+        
+        let currentExcelFile = null;
+        
+        fileInput.addEventListener('change', function(e) {
+            if (this.files.length > 0) {
+                fileName.textContent = this.files[0].name;
+                analyzeBtn.disabled = false;
+            } else {
+                fileName.textContent = 'No file chosen';
+                analyzeBtn.disabled = true;
+            }
+        });
+        
+        analyzeBtn.addEventListener('click', async function() {
+            const file = fileInput.files[0];
+            if (!file) return;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            analyzeBtn.disabled = true;
+            loading.style.display = 'block';
+            results.style.display = 'none';
+            downloadSection.style.display = 'none';
+            
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                loading.style.display = 'none';
+                results.style.display = 'block';
+                
+                if (data.error) {
+                    results.classList.add('error');
+                    resultsContent.innerHTML = `<p>${data.error}</p>`;
+                } else {
+                    results.classList.remove('error');
+                    
+                    // Display preview table
+                    if (data.preview && data.preview.data) {
+                        let tableHTML = '<div class="preview-table"><table><thead><tr>';
+                        
+                        // Add headers
+                        data.preview.columns.forEach(col => {
+                            tableHTML += `<th>${col}</th>`;
+                        });
+                        tableHTML += '</tr></thead><tbody>';
+                        
+                        // Add data rows
+                        data.preview.data.forEach(row => {
+                            tableHTML += '<tr>';
+                            data.preview.columns.forEach(col => {
+                                tableHTML += `<td>${row[col] || 'N/A'}</td>`;
+                            });
+                            tableHTML += '</tr>';
+                        });
+                        
+                        tableHTML += '</tbody></table></div>';
+                        resultsContent.innerHTML = tableHTML;
+                    }
+                    
+                    // Set up download button
+                    if (data.excel_file) {
+                        currentExcelFile = data.excel_file;
+                        downloadBtn.href = `/download/${data.excel_file}`;
+                        downloadSection.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                loading.style.display = 'none';
+                results.style.display = 'block';
+                results.classList.add('error');
+                resultsContent.innerHTML = `<p>Error: ${error.message}</p>`;
+            }
+            
+            analyzeBtn.disabled = false;
+        });
+    </script>
+</body>
+</html>
