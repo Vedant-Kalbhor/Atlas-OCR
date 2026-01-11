@@ -7,7 +7,6 @@ import tempfile
 from datetime import datetime
 from pdf2image import convert_from_path
 from werkzeug.utils import secure_filename
-from PIL import Image
 from paddleocr import PaddleOCR
 
 app = Flask(__name__)
@@ -16,13 +15,12 @@ app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'bmp', 'tif', 'tiff'}
 
 # =========================
-# PaddleOCR (GPU)
+# PaddleOCR
 # =========================
 ocr = PaddleOCR(
     lang='en',
     use_textline_orientation=True
 )
-
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -32,50 +30,47 @@ def allowed_file(filename):
 # =========================
 def convert_pdf_to_images(pdf_path, dpi=300):
     pages = convert_from_path(pdf_path, dpi=dpi)
-    images = []
-    for p in pages:
-        images.append(cv2.cvtColor(np.array(p), cv2.COLOR_RGB2BGR))
-    return images
+    return [cv2.cvtColor(np.array(p), cv2.COLOR_RGB2BGR) for p in pages]
 
 # =========================
 # Geometry Detection
 # =========================
 def detect_circles(gray):
     circles = cv2.HoughCircles(
-        gray,
-        cv2.HOUGH_GRADIENT,
-        dp=1.2,
-        minDist=40,
-        param1=120,
-        param2=30,
-        minRadius=10,
-        maxRadius=400
+        gray, cv2.HOUGH_GRADIENT,
+        dp=1.2, minDist=40,
+        param1=120, param2=30,
+        minRadius=10, maxRadius=400
     )
     results = []
     if circles is not None:
         for c in np.uint16(np.around(circles[0])):
-            results.append({'x': c[0], 'y': c[1], 'r': c[2]})
+            results.append({'x': int(c[0]), 'y': int(c[1]), 'r': int(c[2])})
     return results
 
-def detect_arrows(gray):
+def detect_dimension_lines(gray):
     edges = cv2.Canny(gray, 50, 150)
-    lines = cv2.HoughLinesP(edges, 1, np.pi/180, 80,
-                            minLineLength=30, maxLineGap=10)
-    arrows = []
+    lines = cv2.HoughLinesP(
+        edges, 1, np.pi/180,
+        threshold=120,
+        minLineLength=80,
+        maxLineGap=5
+    )
+    dim_lines = []
     if lines is not None:
         for l in lines:
             x1, y1, x2, y2 = l[0]
             length = np.hypot(x2-x1, y2-y1)
-            if length > 40:
-                arrows.append({'x1': x1, 'y1': y1, 'x2': x2, 'y2': y2})
-    return arrows
+            angle = abs(np.degrees(np.arctan2(y2-y1, x2-x1)))
+            if length > 80 and (angle < 10 or abs(angle - 90) < 10):
+                dim_lines.append((x1, y1, x2, y2))
+    return dim_lines
 
 # =========================
 # OCR
 # =========================
 def run_paddle_ocr(image):
     result = ocr.predict(image)
-
     words = []
 
     for res in result:
@@ -89,17 +84,40 @@ def run_paddle_ocr(image):
 
             words.append({
                 'text': text.replace('⌀', '').replace('Ø', ''),
-                'conf': float(score),
+                'confidence': float(score),
                 'cx': int(sum(x_coords) / len(x_coords)),
                 'cy': int(sum(y_coords) / len(y_coords))
             })
-
     return words
+
+# =========================
+# Utility Filters
+# =========================
+def is_valid_dimension(text):
+    try:
+        val = float(text)
+        return 0.5 < val < 5000
+    except:
+        return False
+
+def cluster_dimensions(dims, tol=3):
+    clustered = []
+    for d in sorted(dims, key=lambda x: float(x['value'])):
+        if not clustered:
+            clustered.append(d)
+            continue
+        prev = clustered[-1]
+        if abs(float(d['value']) - float(prev['value'])) < tol:
+            if d['confidence'] > prev['confidence']:
+                clustered[-1] = d
+        else:
+            clustered.append(d)
+    return clustered
 
 # =========================
 # Dimension Inference
 # =========================
-def infer_dimensions(words, circles, arrows, page_no):
+def infer_dimensions(words, circles, dim_lines, page_no):
     dims = []
     used = set()
     idx = 1
@@ -107,30 +125,30 @@ def infer_dimensions(words, circles, arrows, page_no):
     for w in words:
         if not any(ch.isdigit() for ch in w['text']):
             continue
+        if not is_valid_dimension(w['text']):
+            continue
 
         value = w['text']
         dtype = 'linear'
 
-        # Diameter inference (number near circle)
+        # Diameter: circle + dimension line + radius consistency
         for c in circles:
             dx = float(w['cx']) - float(c['x'])
             dy = float(w['cy']) - float(c['y'])
-            if np.hypot(dx, dy) < float(c['r']) * 1.5:
+            dist_center = np.hypot(dx, dy)
 
-                dtype = 'diameter'
-                break
+            if abs(dist_center - c['r']) < c['r'] * 0.6:
+                for l in dim_lines:
+                    lx1, ly1, lx2, ly2 = l
+                    d_line = min(
+                        np.hypot(w['cx'] - lx1, w['cy'] - ly1),
+                        np.hypot(w['cx'] - lx2, w['cy'] - ly2)
+                    )
+                    if d_line < 50:
+                        dtype = 'diameter'
+                        break
 
-        # Arrow proximity → linear dimension
-        for a in arrows:
-            dist = min(
-                np.hypot(w['cx'] - a['x1'], w['cy'] - a['y1']),
-                np.hypot(w['cx'] - a['x2'], w['cy'] - a['y2'])
-            )
-            if dist < 40:
-                dtype = 'linear'
-                break
-
-        key = (page_no, dtype, value, w['cx'], w['cy'])
+        key = (page_no, dtype, value)
         if key in used:
             continue
         used.add(key)
@@ -141,11 +159,11 @@ def infer_dimensions(words, circles, arrows, page_no):
             'dim_type': dtype,
             'value': value,
             'unit': 'mm',
-            'confidence': round(w['conf'], 3)
+            'confidence': round(w['confidence'], 3)
         })
         idx += 1
 
-    return dims
+    return cluster_dimensions(dims)
 
 # =========================
 # Flask Routes
@@ -172,12 +190,11 @@ def analyze():
 
     for i, img in enumerate(images, start=1):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
         circles = detect_circles(gray)
-        arrows = detect_arrows(gray)
+        dim_lines = detect_dimension_lines(gray)
         words = run_paddle_ocr(img)
 
-        dims = infer_dimensions(words, circles, arrows, i)
+        dims = infer_dimensions(words, circles, dim_lines, i)
         all_dims.extend(dims)
 
     df = pd.DataFrame(all_dims)
