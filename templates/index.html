@@ -3,339 +3,717 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Engineering Drawing Dimension Extractor</title>
+    <title>Atlas-OCR | Engineering Drawing Dimension Extractor</title>
+    <meta name="description" content="Extract dimensions from engineering drawings locally using AI - no API keys needed.">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            background: #0f0f1a;
             min-height: 100vh;
-            padding: 20px;
+            color: #e0e0e0;
+            overflow-x: hidden;
         }
-        
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+            z-index: 0;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgPulse {
+            0% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+
         .container {
-            max-width: 900px;
+            max-width: 960px;
             margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            padding: 40px;
+            padding: 40px 24px;
+            position: relative;
+            z-index: 1;
         }
-        
-        h1 {
-            color: #333;
+
+        /* Header */
+        .header {
             text-align: center;
-            margin-bottom: 10px;
-            font-size: 2em;
+            margin-bottom: 40px;
         }
-        
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
+
+        .header h1 {
+            font-size: 2.2em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #818cf8, #a78bfa, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header .subtitle {
+            color: #9ca3af;
             font-size: 0.95em;
+            font-weight: 300;
         }
-        
-        .upload-section {
-            border: 2px dashed #667eea;
-            border-radius: 8px;
-            padding: 40px;
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(99, 102, 241, 0.15);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 20px;
+            font-size: 0.75em;
+            color: #818cf8;
+            margin-top: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Card */
+        .card {
+            background: rgba(30, 30, 50, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 24px;
+            transition: border-color 0.3s;
+        }
+
+        .card:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 2px dashed rgba(99, 102, 241, 0.3);
+            border-radius: 12px;
+            padding: 48px 24px;
             text-align: center;
-            margin-bottom: 30px;
-            background: #f8f9ff;
+            cursor: pointer;
             transition: all 0.3s;
+            position: relative;
         }
-        
-        .upload-section:hover {
-            border-color: #764ba2;
-            background: #f0f2ff;
+
+        .upload-area:hover, .upload-area.dragover {
+            border-color: #818cf8;
+            background: rgba(99, 102, 241, 0.05);
         }
-        
+
+        .upload-area.has-file {
+            border-color: #34d399;
+            background: rgba(52, 211, 153, 0.05);
+        }
+
         .upload-icon {
-            font-size: 3em;
-            margin-bottom: 15px;
-            color: #667eea;
+            font-size: 2.5em;
+            margin-bottom: 16px;
+            display: block;
         }
-        
+
+        .upload-text {
+            color: #9ca3af;
+            font-size: 0.9em;
+            margin-bottom: 16px;
+        }
+
+        .upload-text strong {
+            color: #818cf8;
+        }
+
         input[type="file"] {
             display: none;
         }
-        
+
         .file-label {
             display: inline-block;
-            padding: 12px 30px;
-            background: #667eea;
+            padding: 10px 28px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            font-size: 1em;
-            transition: background 0.3s;
-        }
-        
-        .file-label:hover {
-            background: #764ba2;
-        }
-        
-        .file-name {
-            margin-top: 15px;
-            color: #666;
             font-size: 0.9em;
+            font-weight: 500;
+            transition: all 0.3s;
+            border: none;
         }
-        
+
+        .file-label:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .file-name {
+            margin-top: 16px;
+            color: #6b7280;
+            font-size: 0.85em;
+        }
+
+        .file-name.selected {
+            color: #34d399;
+            font-weight: 500;
+        }
+
+        /* Analyze button */
         .analyze-btn {
             display: block;
             width: 100%;
-            padding: 15px;
-            background: #667eea;
+            padding: 16px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: white;
             border: none;
-            border-radius: 5px;
-            font-size: 1.1em;
+            border-radius: 10px;
+            font-size: 1.05em;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s;
             margin-top: 20px;
-            transition: background 0.3s;
+            letter-spacing: 0.3px;
+            position: relative;
+            overflow: hidden;
         }
-        
+
+        .analyze-btn::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; right: 0; bottom: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .analyze-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
         .analyze-btn:hover:not(:disabled) {
-            background: #764ba2;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 30px rgba(99, 102, 241, 0.4);
         }
-        
+
         .analyze-btn:disabled {
-            background: #ccc;
+            background: rgba(75, 85, 99, 0.5);
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
-        
-        .download-btn {
-            display: inline-block;
-            padding: 12px 30px;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1em;
-            cursor: pointer;
-            text-decoration: none;
-            transition: background 0.3s;
-            margin-top: 15px;
-        }
-        
-        .download-btn:hover {
-            background: #218838;
-        }
-        
+
+        /* Loading */
         .loading {
+            display: none;
             text-align: center;
-            margin: 20px 0;
-            display: none;
+            padding: 40px 20px;
         }
-        
-        .spinner {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .results {
-            display: none;
-            margin-top: 30px;
-            padding: 25px;
-            background: #f8f9ff;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .results h2 {
-            color: #333;
-            margin-bottom: 15px;
-            font-size: 1.5em;
-        }
-        
-        .results-content {
-            color: #444;
-            line-height: 1.6;
-            font-size: 0.95em;
-        }
-        
-        .preview-table {
-            width: 100%;
-            margin-top: 20px;
-            border-collapse: collapse;
-            overflow-x: auto;
+
+        .loading.active {
             display: block;
         }
-        
-        .preview-table table {
-            width: 100%;
-            min-width: 600px;
+
+        .spinner-ring {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(99, 102, 241, 0.15);
+            border-top-color: #818cf8;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 20px;
         }
-        
-        .preview-table th,
-        .preview-table td {
-            padding: 10px;
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #9ca3af;
+            font-size: 0.9em;
+        }
+
+        .loading-steps {
+            margin-top: 16px;
             text-align: left;
-            border: 1px solid #ddd;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
         }
-        
-        .preview-table th {
-            background: #667eea;
-            color: white;
+
+        .loading-step {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 0;
+            color: #6b7280;
+            font-size: 0.85em;
+            transition: color 0.3s;
+        }
+
+        .loading-step.active {
+            color: #818cf8;
+        }
+
+        .loading-step.done {
+            color: #34d399;
+        }
+
+        .step-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4b5563;
+            flex-shrink: 0;
+            transition: all 0.3s;
+        }
+
+        .loading-step.active .step-dot {
+            background: #818cf8;
+            box-shadow: 0 0 8px rgba(129, 140, 248, 0.5);
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .loading-step.done .step-dot {
+            background: #34d399;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+        }
+
+        /* Results */
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .results-header h2 {
+            font-size: 1.3em;
             font-weight: 600;
+            color: #e5e7eb;
         }
-        
-        .preview-table tr:nth-child(even) {
-            background: #f8f9ff;
+
+        .results-count {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #34d399;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 500;
         }
-        
-        .error {
-            background: #ffe6e6;
-            border-left-color: #ff4444;
+
+        /* Table */
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.06);
         }
-        
-        .error h2 {
-            color: #cc0000;
+
+        .table-wrapper table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 500px;
         }
-        
+
+        .table-wrapper th {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.8em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            white-space: nowrap;
+        }
+
+        .table-wrapper td {
+            padding: 10px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.88em;
+            color: #d1d5db;
+        }
+
+        .table-wrapper tr:hover td {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .table-wrapper tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Download buttons */
         .download-section {
+            display: none;
+            gap: 12px;
+            justify-content: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            flex-wrap: wrap;
+        }
+
+        .download-section.active {
+            display: flex;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .download-btn.xlsx {
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+        }
+
+        .download-btn.csv {
+            background: rgba(52, 211, 153, 0.1);
+            border: 1px solid rgba(52, 211, 153, 0.3);
+            color: #34d399;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        /* Error state */
+        .error-card {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .error-card h3 {
+            color: #f87171;
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+
+        .error-card p {
+            color: #fca5a5;
+            font-size: 0.9em;
+            line-height: 1.6;
+            word-break: break-word;
+        }
+
+        /* Footer */
+        .footer {
             text-align: center;
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 2px solid #e0e0e0;
+            margin-top: 40px;
+            color: #4b5563;
+            font-size: 0.8em;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .container { padding: 20px 16px; }
+            .header h1 { font-size: 1.6em; }
+            .card { padding: 20px; }
+            .upload-area { padding: 32px 16px; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📐 Dimension Extractor</h1>
-        <p class="subtitle">Upload engineering drawings to extract dimensions using AI</p>
-        
-        <div class="upload-section">
-            <div class="upload-icon">📄</div>
-            <label for="file-input" class="file-label">Choose File</label>
-            <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.gif,.bmp">
-            <div class="file-name" id="file-name">No file chosen</div>
-        </div>
-        
-        <button class="analyze-btn" id="analyze-btn" disabled>Analyze Drawing</button>
-        
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p style="margin-top: 15px; color: #666;">Analyzing document...</p>
-        </div>
-        
-        <div class="results" id="results">
-            <h2>Extracted Dimensions</h2>
-            <div class="results-content" id="results-content"></div>
+        <div class="header">
+            <h1>📐 Atlas-OCR</h1>
+            <p class="subtitle">Extract dimensions from engineering drawings</p>
             
-            <div class="download-section" id="download-section" style="display: none;">
-                <a href="#" class="download-btn" id="download-btn">
-                    📥 Download Excel File
-                </a>
+        </div>
+
+        <div class="card">
+            <div class="upload-area" id="upload-area">
+                <span class="upload-icon">📄</span>
+                <p class="upload-text">Drag & drop your drawing here or <strong>browse</strong></p>
+                <label for="file-input" class="file-label">Choose File</label>
+                <input type="file" id="file-input" accept=".pdf,.png,.jpg,.jpeg,.bmp,.tif,.tiff">
+                <div class="file-name" id="file-name">Supports PDF, PNG, JPG, BMP, TIFF</div>
+            </div>
+
+            <button class="analyze-btn" id="analyze-btn" disabled>⚡ Analyze Drawing</button>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner-ring"></div>
+            <p class="loading-text">Processing your engineering drawing...</p>
+            <div class="loading-steps">
+                <div class="loading-step" id="step-render">
+                    <span class="step-dot"></span>
+                    <span>Rendering pages at high DPI</span>
+                </div>
+                <div class="loading-step" id="step-ocr">
+                    <span class="step-dot"></span>
+                    <span>Running multi-engine OCR</span>
+                </div>
+                <div class="loading-step" id="step-geometry">
+                    <span class="step-dot"></span>
+                    <span>Detecting geometry & arrows</span>
+                </div>
+                <div class="loading-step" id="step-ai">
+                    <span class="step-dot"></span>
+                    <span>AI vision analysis (LLaVA)</span>
+                </div>
+                <div class="loading-step" id="step-export">
+                    <span class="step-dot"></span>
+                    <span>Exporting results</span>
+                </div>
             </div>
         </div>
+
+        <div class="results" id="results">
+            <div class="card" id="results-card">
+                <div class="results-header">
+                    <h2>📊 Extracted Dimensions</h2>
+                    <span class="results-count" id="results-count"></span>
+                </div>
+                <div id="results-content"></div>
+
+                <div class="download-section" id="download-section">
+                    <a href="#" class="download-btn xlsx" id="download-xlsx">
+                        📥 Download XLSX
+                    </a>
+                    <a href="#" class="download-btn csv" id="download-csv">
+                        📥 Download CSV
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Atlas-OCR • Local AI-powered dimension extraction • EasyOCR + Tesseract + LLaVA
+        </div>
     </div>
-    
+
     <script>
         const fileInput = document.getElementById('file-input');
         const fileName = document.getElementById('file-name');
         const analyzeBtn = document.getElementById('analyze-btn');
+        const uploadArea = document.getElementById('upload-area');
         const loading = document.getElementById('loading');
         const results = document.getElementById('results');
         const resultsContent = document.getElementById('results-content');
+        const resultsCount = document.getElementById('results-count');
         const downloadSection = document.getElementById('download-section');
-        const downloadBtn = document.getElementById('download-btn');
-        
-        let currentExcelFile = null;
-        
-        fileInput.addEventListener('change', function(e) {
+        const downloadXlsx = document.getElementById('download-xlsx');
+        const downloadCsv = document.getElementById('download-csv');
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
+
+        uploadArea.addEventListener('click', (e) => {
+            if (e.target !== fileInput && !e.target.classList.contains('file-label')) {
+                fileInput.click();
+            }
+        });
+
+        fileInput.addEventListener('change', function () {
             if (this.files.length > 0) {
                 fileName.textContent = this.files[0].name;
+                fileName.classList.add('selected');
+                uploadArea.classList.add('has-file');
                 analyzeBtn.disabled = false;
             } else {
-                fileName.textContent = 'No file chosen';
+                fileName.textContent = 'Supports PDF, PNG, JPG, BMP, TIFF';
+                fileName.classList.remove('selected');
+                uploadArea.classList.remove('has-file');
                 analyzeBtn.disabled = true;
             }
         });
-        
-        analyzeBtn.addEventListener('click', async function() {
+
+        // Loading step animation
+        let stepInterval;
+        function animateSteps() {
+            const steps = ['step-render', 'step-ocr', 'step-geometry', 'step-ai', 'step-export'];
+            let current = 0;
+
+            // Timing: render 2s, ocr 10s, geometry 3s, ai 40s, export 2s
+            const durations = [2000, 10000, 3000, 40000, 2000];
+
+            function advance() {
+                if (current > 0) {
+                    document.getElementById(steps[current - 1]).classList.remove('active');
+                    document.getElementById(steps[current - 1]).classList.add('done');
+                }
+                if (current < steps.length) {
+                    document.getElementById(steps[current]).classList.add('active');
+                    current++;
+                    stepInterval = setTimeout(advance, durations[current - 1]);
+                }
+            }
+
+            advance();
+        }
+
+        function resetSteps() {
+            clearTimeout(stepInterval);
+            const allSteps = document.querySelectorAll('.loading-step');
+            allSteps.forEach(s => {
+                s.classList.remove('active', 'done');
+            });
+        }
+
+        // Analyze
+        analyzeBtn.addEventListener('click', async function () {
             const file = fileInput.files[0];
             if (!file) return;
-            
+
             const formData = new FormData();
             formData.append('file', file);
-            
+
             analyzeBtn.disabled = true;
-            loading.style.display = 'block';
-            results.style.display = 'none';
-            downloadSection.style.display = 'none';
-            
+            loading.classList.add('active');
+            results.classList.remove('active');
+            downloadSection.classList.remove('active');
+            resetSteps();
+            animateSteps();
+
             try {
                 const response = await fetch('/analyze', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const data = await response.json();
-                
-                loading.style.display = 'none';
-                results.style.display = 'block';
-                
+
+                resetSteps();
+                loading.classList.remove('active');
+
                 if (data.error) {
-                    results.classList.add('error');
-                    resultsContent.innerHTML = `<p>${data.error}</p>`;
+                    results.classList.add('active');
+                    resultsCount.textContent = '';
+                    resultsContent.innerHTML = `
+                        <div class="error-card">
+                            <h3>⚠️ Error</h3>
+                            <p>${data.error}</p>
+                            ${data.raw ? `<p style="margin-top:12px; font-size:0.8em; color:#9ca3af;">Raw output: ${data.raw.substring(0, 500)}</p>` : ''}
+                        </div>
+                    `;
                 } else {
-                    results.classList.remove('error');
-                    
-                    // Display preview table
+                    results.classList.add('active');
+
                     if (data.preview && data.preview.data) {
-                        let tableHTML = '<div class="preview-table"><table><thead><tr>';
-                        
-                        // Add headers
-                        data.preview.columns.forEach(col => {
+                        const rowCount = data.preview.data.length;
+                        const colCount = data.preview.columns ? data.preview.columns.length : 0;
+                        resultsCount.textContent = `${rowCount} row${rowCount !== 1 ? 's' : ''} × ${colCount} column${colCount !== 1 ? 's' : ''}`;
+
+                        // Build columns list
+                        let columns = data.preview.columns || Object.keys(data.preview.data[0] || {});
+
+                        let tableHTML = '<div class="table-wrapper"><table><thead><tr>';
+                        columns.forEach(col => {
                             tableHTML += `<th>${col}</th>`;
                         });
                         tableHTML += '</tr></thead><tbody>';
-                        
-                        // Add data rows
+
                         data.preview.data.forEach(row => {
                             tableHTML += '<tr>';
-                            data.preview.columns.forEach(col => {
-                                tableHTML += `<td>${row[col] || 'N/A'}</td>`;
+                            columns.forEach(col => {
+                                tableHTML += `<td>${row[col] !== undefined ? row[col] : 'N/A'}</td>`;
                             });
                             tableHTML += '</tr>';
                         });
-                        
+
                         tableHTML += '</tbody></table></div>';
                         resultsContent.innerHTML = tableHTML;
+                    } else if (Array.isArray(data.preview)) {
+                        // Handle array format
+                        const rowCount = data.preview.length;
+                        resultsCount.textContent = `${rowCount} row${rowCount !== 1 ? 's' : ''}`;
+
+                        if (rowCount > 0) {
+                            let columns = Object.keys(data.preview[0]);
+                            let tableHTML = '<div class="table-wrapper"><table><thead><tr>';
+                            columns.forEach(col => { tableHTML += `<th>${col}</th>`; });
+                            tableHTML += '</tr></thead><tbody>';
+                            data.preview.forEach(row => {
+                                tableHTML += '<tr>';
+                                columns.forEach(col => { tableHTML += `<td>${row[col] || 'N/A'}</td>`; });
+                                tableHTML += '</tr>';
+                            });
+                            tableHTML += '</tbody></table></div>';
+                            resultsContent.innerHTML = tableHTML;
+                        }
                     }
-                    
-                    // Set up download button
-                    if (data.excel_file) {
-                        currentExcelFile = data.excel_file;
-                        downloadBtn.href = `/download/${data.excel_file}`;
-                        downloadSection.style.display = 'block';
+
+                    // Download buttons
+                    if (data.excel_file || data.csv_file) {
+                        downloadSection.classList.add('active');
+                        if (data.excel_file) downloadXlsx.href = `/download/${data.excel_file}`;
+                        if (data.csv_file) downloadCsv.href = `/download/${data.csv_file}`;
+
+                        if (!data.excel_file) downloadXlsx.style.display = 'none';
+                        if (!data.csv_file) downloadCsv.style.display = 'none';
                     }
                 }
             } catch (error) {
-                loading.style.display = 'none';
-                results.style.display = 'block';
-                results.classList.add('error');
-                resultsContent.innerHTML = `<p>Error: ${error.message}</p>`;
+                resetSteps();
+                loading.classList.remove('active');
+                results.classList.add('active');
+                resultsContent.innerHTML = `
+                    <div class="error-card">
+                        <h3>⚠️ Connection Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
             }
-            
+
             analyzeBtn.disabled = false;
         });
     </script>
