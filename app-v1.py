@@ -193,10 +193,13 @@ def process_crop():
 
         text = ""
         try:
-            # For manual boxes, we skip detection (det=False) and just do Recognition
             if hasattr(_ocr, 'ocr'): # PaddleOCR
                 log.info(f"Running PaddleOCR on crop {i+1}...")
-                ocr_res = _ocr.ocr(crop, det=False, cls=True)
+                try:
+                    ocr_res = _ocr.ocr(crop)
+                except Exception as paddle_err:
+                    log.error(f"PaddleOCR internal error: {paddle_err}")
+                    ocr_res = None
                 log.info(f"Raw OCR Output: {ocr_res}")
                 
                 if ocr_res:

@@ -3,377 +3,1113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atlas-HITL | Precision Dimension Extraction</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <title>Atlas OCR - CAD Dimension Extractor with Annotations</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         :root {
-            --primary: #6366f1;
-            --accent: #22d3ee;
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --border: #334155;
-            --text: #f8fafc;
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #3b82f6;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #d97706;
+            --neutral-50: #f9fafb;
+            --neutral-100: #f3f4f6;
+            --neutral-200: #e5e7eb;
+            --neutral-300: #d1d5db;
+            --neutral-400: #9ca3af;
+            --neutral-600: #4b5563;
+            --neutral-700: #374151;
+            --neutral-900: #111827;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            height: 100vh;
+        html, body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f7fa;
+            color: var(--neutral-900);
+        }
+
+        .app-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            box-shadow: var(--shadow-md);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .app-header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .app-header p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--primary);
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--neutral-50);
+        }
+
+        .drop-zone:hover {
+            background: var(--neutral-100);
+            border-color: var(--primary-dark);
+        }
+
+        .drop-zone.dragover {
+            background: rgba(37, 99, 235, 0.1);
+            border-color: var(--primary-dark);
+        }
+
+        .drop-zone-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .drop-zone-text {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .drop-zone-hint {
+            color: var(--neutral-600);
+            font-size: 0.9em;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .button-group {
             display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
         }
 
-        header {
-            background: var(--surface);
-            border-bottom: 1px solid var(--border);
-            padding: 0.75rem 1.5rem;
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:disabled {
+            background: var(--neutral-300);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .btn-secondary {
+            background: var(--neutral-200);
+            color: var(--neutral-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--neutral-300);
+        }
+
+        .status-message {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-top: 15px;
+            display: none;
+            font-weight: 500;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.info {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--primary-dark);
+            border-left: 4px solid var(--primary);
+        }
+
+        .status-message.success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success);
+            border-left: 4px solid var(--success);
+        }
+
+        .status-message.error {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--danger);
+            border-left: 4px solid var(--danger);
+        }
+
+        /* Annotation Section */
+        .annotation-section {
+            display: none;
+            margin-top: 20px;
+        }
+
+        .annotation-section.show {
+            display: block;
+        }
+
+        .annotation-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--neutral-200);
+        }
+
+        .annotation-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 1000;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--neutral-200);
         }
 
-        .logo { font-family: 'Outfit'; font-weight: 700; font-size: 1.5rem; color: var(--accent); }
+        .annotation-header h2 {
+            font-size: 1.4em;
+            color: var(--neutral-900);
+        }
 
-        .toolbar {
+        .page-tabs {
             display: flex;
-            gap: 0.75rem;
-            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            padding-bottom: 4px;
+            overflow-x: auto;
+            border-bottom: 1px solid var(--neutral-200);
         }
 
-        .btn {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.4rem;
+        .page-tab {
+            padding: 8px 16px;
+            background: var(--neutral-100);
+            border: 1px solid var(--neutral-200);
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-weight: 600;
+            font-size: 0.9em;
+            color: var(--neutral-600);
+            white-space: nowrap;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .page-tab.active {
+            background: white;
+            color: var(--primary);
+            border-color: var(--neutral-200);
+            position: relative;
+        }
+
+        .page-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+        }
+
+        .page-tab:hover:not(.active) {
+            background: var(--neutral-200);
+            color: var(--neutral-900);
+        }
+
+        /* Improved Canvas Area */
+        .workspace-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: var(--neutral-100);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--neutral-200);
+        }
+
+        .toolbar-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 6px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--neutral-100);
+            padding: 4px;
+            border-radius: 6px;
+        }
+
+        .zoom-btn {
+            width: 32px;
+            height: 32px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid var(--neutral-300);
+            border-radius: 4px;
+            font-size: 1.2em;
+            cursor: pointer;
             transition: 0.2s;
         }
-        .btn:hover { background: #334155; border-color: var(--primary); }
-        .btn-primary { background: var(--primary); border: none; }
-        .btn-primary:active { transform: scale(0.95); }
 
-        #zoom-val { min-width: 50px; text-align: center; font-variant-numeric: tabular-nums; }
-
-        /* ──────────────────── LAYOUT ──────────────────── */
-        main { flex: 1; display: flex; overflow: hidden; }
-
-        #sidebar {
-            width: 180px;
-            background: var(--surface);
-            border-right: 1px solid var(--border);
-            overflow-y: auto;
-            padding: 1rem 0;
+        .zoom-btn:hover {
+            background: var(--neutral-50);
+            border-color: var(--primary);
+            color: var(--primary);
         }
 
-        .page-item {
-            padding: 0.75rem 1.5rem;
-            cursor: pointer;
-            border-left: 3px solid transparent;
-            font-size: 0.85rem;
-            opacity: 0.7;
+        .zoom-level {
+            font-weight: 700;
+            min-width: 50px;
+            text-align: center;
+            font-size: 0.9em;
+            color: var(--neutral-700);
         }
-        .page-item:hover { background: rgba(255,255,255,0.05); }
-        .page-item.active { border-color: var(--accent); background: rgba(34, 211, 238, 0.1); opacity: 1; font-weight: 600; }
 
-        /* ──── Workspace (Drawing Area) ──── */
-        #workspace {
-            flex: 1;
+        .canvas-viewport {
+            position: relative;
+            width: 100%;
+            height: 600px;
             overflow: auto;
-            padding: 40px;
-            background: #111827;
+            background: #cbd5e1; /* slate-300 */
+            border-radius: 4px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
-            position: relative;
+            padding: 20px;
+            border: 1px solid var(--neutral-300);
         }
 
-        #canvas-wrapper {
+        .canvas-wrapper {
             position: relative;
-            transform-origin: top left;
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            box-shadow: 0 0 40px rgba(0,0,0,0.2);
+            transform-origin: top center;
             background: white;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        canvas { position: absolute; top: 0; left: 0; }
-        #pdf-canvas { z-index: 1; pointer-events: none; }
-        #overlay-canvas { z-index: 2; cursor: crosshair; }
+        #drawingCanvas {
+            display: block;
+            cursor: crosshair;
+            image-rendering: high-quality;
+        }
 
-        /* ──── Right Panel (Results) ──── */
-        #panel-right {
-            width: 320px;
-            background: var(--surface);
-            border-left: 1px solid var(--border);
+        .canvas-controls {
             display: flex;
-            flex-direction: column;
+            gap: 8px;
+            flex-wrap: wrap;
         }
-        .panel-header {
-            padding: 1rem;
+
+        .box-list {
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+            max-height: 240px;
+            overflow-y: auto;
+            padding: 4px;
+        }
+
+        .box-item {
+            background: white;
+            padding: 12px;
+            border: 1px solid var(--neutral-200);
+            border-left: 4px solid var(--primary);
+            border-radius: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+            transition: 0.2s;
+        }
+
+        .box-item:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary-light);
+        }
+
+        .btn-delete {
+            background: #fee2e2;
+            color: #b91c1c;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border-radius: 4px;
+        }
+
+        .btn-delete:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .results-section.show {
+            display: block;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--neutral-200);
+        }
+
+        .results-header h2 {
+            font-size: 1.5em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat {
+            background: var(--neutral-50);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-label {
+            color: var(--neutral-600);
+            font-size: 0.85em;
+            text-transform: uppercase;
             font-weight: 600;
-            border-bottom: 1px solid var(--border);
-            font-family: 'Outfit';
+            margin-bottom: 8px;
         }
-        #results { flex: 1; overflow-y: auto; padding: 1rem; }
-        .res-card {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            padding: 0.75rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-        }
-        .res-type { color: var(--accent); font-size: 0.7rem; font-weight: 800; text-transform: uppercase; margin-bottom: 4px;}
-        .res-val { color: white; font-weight: 600; font-size: 1.1rem; }
 
-        /* ──────────────────── MODAL ──────────────────── */
-        #upload-modal {
-            position: fixed; inset: 0; z-index: 2000;
-            background: rgba(15, 23, 42, 0.95);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        .stat-value {
+            font-size: 2em;
+            font-weight: 700;
+            color: var(--primary);
         }
-        .drop-zone {
-            width: 400px; padding: 40px; border: 2px dashed var(--border); border-radius: 1rem;
-            text-align: center; cursor: pointer; transition: 0.2s;
-        }
-        .drop-zone:hover { border-color: var(--accent); background: rgba(34, 211, 238, 0.05); }
 
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        .data-table tr:hover {
+            background: var(--neutral-50);
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 768px) {
+            .canvas-container {
+                max-height: 400px;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table {
+                font-size: 0.85em;
+            }
+
+            .data-table th, .data-table td {
+                padding: 8px;
+            }
+        }
     </style>
 </head>
 <body>
-
-<header>
-    <div class="logo">ATLAS-HITL</div>
-    <div class="toolbar">
-        <button class="btn" id="btn-zoom-out">−</button>
-        <span id="zoom-val">100%</span>
-        <button class="btn" id="btn-zoom-in">+</button>
-        <div style="width: 20px;"></div>
-        <button class="btn" id="btn-clear">Clear</button>
-        <button class="btn btn-primary" id="btn-analyze">Process Page</button>
-        <button class="btn" id="btn-export" style="border-color: #10b981; color: #10b981;">Export XLSX</button>
+    <!-- Header -->
+    <div class="app-header">
+        <h1>📐 Atlas OCR - CAD Dimension Extractor</h1>
+        <p>Upload PDF, annotate regions, extract dimensions with precision</p>
     </div>
-</header>
 
-<main>
-    <div id="sidebar"></div>
-    <div id="workspace">
-        <div id="canvas-wrapper">
-            <canvas id="pdf-canvas"></canvas>
-            <canvas id="overlay-canvas"></canvas>
+    <div class="container">
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-icon">📄</div>
+                <div class="drop-zone-text">Drop your PDF or image here</div>
+                <div class="drop-zone-hint">or click to browse (max 50MB)</div>
+            </div>
+            <input type="file" id="fileInput" accept=".pdf,.png,.jpg,.jpeg">
+            
+            <div class="button-group">
+                <button class="btn-primary" id="processBtn" disabled>
+                    <span>⚙️</span>
+                    <span>Extract Dimensions</span>
+                </button>
+                <button class="btn-secondary" id="clearBtn">
+                    <span>🗑️</span>
+                    <span>Clear All</span>
+                </button>
+            </div>
+
+            <div class="status-message info" id="statusMessage"></div>
+        </div>
+
+        <!-- Annotation Section -->
+        <div class="annotation-section" id="annotationSection">
+            <div class="annotation-container">
+                <div class="annotation-header">
+                    <div>
+                        <h2>📝 Step 1: Annotate Dimension Regions</h2>
+                        <p style="color: var(--neutral-600); font-size: 0.9em; margin-top: 4px;">
+                            Select PDF pages and draw boxes around dimensions to target them with 100% precision.
+                        </p>
+                    </div>
+                    <div class="canvas-controls">
+                        <button class="btn-secondary" id="undoBtn" title="Undo Last Box (Ctrl+Z)">
+                            <span>↶</span> Undo
+                        </button>
+                        <button class="btn-secondary" id="clearPageBtn">
+                            <span>🗑️</span> Clear Page
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Page Tabs -->
+                <div class="page-tabs" id="pageTabs"></div>
+
+                <!-- Expanded Workspace -->
+                <div class="workspace-container">
+                    <div class="toolbar-inner">
+                        <div class="zoom-controls">
+                            <button class="btn zoom-btn" id="zoomOutBtn" title="Zoom Out">-</button>
+                            <span class="zoom-level" id="zoomLevel">100%</span>
+                            <button class="btn zoom-btn" id="zoomInBtn" title="Zoom In">+</button>
+                            <button class="btn zoom-btn" id="resetZoomBtn" title="Fit to View">⛶</button>
+                        </div>
+                        <div style="font-size: 0.85em; color: var(--neutral-600);">
+                            <span id="boxCountDisplay">0</span> Boxes drawn on this page
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Viewport -->
+                    <div class="canvas-viewport" id="canvasViewport">
+                        <div class="canvas-wrapper" id="canvasWrapper">
+                            <canvas id="drawingCanvas"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boxes List Grid -->
+                <div class="box-list" id="boxList"></div>
+
+                <!-- Navigation -->
+                <div class="button-group" style="margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--neutral-200);">
+                    <button class="btn-primary" id="proceedBtn" disabled>
+                        <span>✓</span> Harvest Dimensions from Annotated Regions
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2>✓ Extraction Results</h2>
+                <div class="button-group">
+                    <button class="btn-secondary" id="downloadXlsxBtn">
+                        <span>📥</span> Download XLSX
+                    </button>
+                    <button class="btn-secondary" id="downloadCsvBtn">
+                        <span>📥</span> Download CSV
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">Total Dimensions</div>
+                    <div class="stat-value" id="totalDimensions">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Pages Processed</div>
+                    <div class="stat-value" id="pagesProcessed">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Avg Confidence</div>
+                    <div class="stat-value" id="avgConfidence">0%</div>
+                </div>
+            </div>
+
+            <!-- Data Table -->
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Feature</th>
+                        <th>Value</th>
+                        <th>Unit</th>
+                        <th>Type</th>
+                        <th>Confidence</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody">
+                </tbody>
+            </table>
         </div>
     </div>
-    <div id="panel-right">
-        <div class="panel-header">EXTRACTED DATA</div>
-        <div id="results"></div>
-    </div>
-</main>
 
-<div id="upload-modal">
-    <div class="drop-zone" id="drop-zone">
-        <h2 style="margin-bottom: 10px;">Select Engineering PDF</h2>
-        <p style="color: var(--accent);">Target specific dimensions with manual boxes</p>
-    </div>
-    <input type="file" id="file-input" hidden>
-</div>
-
-<script>
-    const state = {
-        pages: [],
-        currentIdx: -1,
-        zoom: 0.5, // Start at 50% to see whole page
-        isDrawing: false,
-        startX: 0, 
-        startY: 0,
-        boxes: [],
-        currentBox: null,
-        results: []
-    };
-
-    const wrapper = document.getElementById('canvas-wrapper');
-    const pCanvas = document.getElementById('pdf-canvas');
-    const oCanvas = document.getElementById('overlay-canvas');
-    const pCtx = pCanvas.getContext('2d');
-    const oCtx = oCanvas.getContext('2d');
-    const resultsContainer = document.getElementById('results');
-
-    // ──────────────────── ZOOM LOGIC ────────────────────
-
-    function updateZoom() {
-        wrapper.style.transform = `scale(${state.zoom})`;
-        document.getElementById('zoom-val').innerText = `${Math.round(state.zoom * 100)}%`;
-    }
-
-    document.getElementById('btn-zoom-in').onclick = () => { state.zoom += 0.1; updateZoom(); };
-    document.getElementById('btn-zoom-out').onclick = () => { state.zoom = Math.max(0.1, state.zoom - 0.1); updateZoom(); };
-
-    // ──────────────────── UPLOAD ────────────────────
-
-    const fileIn = document.getElementById('file-input');
-    document.getElementById('drop-zone').onclick = () => fileIn.click();
-    fileIn.onchange = ev => uploadFile(ev.target.files[0]);
-
-    async function uploadFile(file) {
-        if (!file) return;
-        const fd = new FormData();
-        fd.append('file', file);
-        document.getElementById('upload-modal').innerHTML = "<h1>Rendering Drawing...</h1>";
-        const resp = await fetch('/upload', { method: 'POST', body: fd });
-        const data = await resp.json();
-        state.pages = data.pages;
-        document.getElementById('upload-modal').style.display = 'none';
-        initPageList();
-        loadPage(0);
-    }
-
-    function initPageList() {
-        const side = document.getElementById('sidebar');
-        side.innerHTML = "";
-        state.pages.forEach((p, i) => {
-            const div = document.createElement('div');
-            div.className = 'page-item';
-            div.id = `pg-${i}`;
-            div.innerText = `Page ${i+1}`;
-            div.onclick = () => loadPage(i);
-            side.appendChild(div);
-        });
-    }
-
-    function loadPage(idx) {
-        state.currentIdx = idx;
-        state.boxes = [];
-        document.querySelectorAll('.page-item').forEach(el => el.classList.remove('active'));
-        document.getElementById(`pg-${idx}`).classList.add('active');
-
-        const page = state.pages[idx];
-        const img = new Image();
-        img.src = `/get_page_image/${page.name}`;
-        img.onload = () => {
-            pCanvas.width = page.w; pCanvas.height = page.h;
-            oCanvas.width = page.w; oCanvas.height = page.h;
-            wrapper.style.width = page.w + 'px';
-            wrapper.style.height = page.h + 'px';
-            pCtx.drawImage(img, 0, 0);
-            drawAll();
-            // Auto-zoom to fit height if window is small
-            const fit = (window.innerHeight - 150) / page.h;
-            state.zoom = Math.min(1.0, fit);
-            updateZoom();
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════════
+        // STATE MANAGEMENT
+        // ═══════════════════════════════════════════════════════════════════════════
+        const state = {
+            file: null,
+            filepath: null,
+            filename: null,
+            imagePaths: [],
+            totalPages: 0,
+            currentPage: 1,
+            
+            // Bounding boxes per page: { pageNum: [boxes] }
+            annotations: {},
+            
+            // UI State
+            zoom: 1.0,
+            isDrawing: false,
+            startX: 0,
+            startY: 0,
+            images: [], // Pre-loaded Image objects
+            currentImageData: null,
+            
+            // Results
+            results: null,
+            excelFile: null,
+            csvFile: null
         };
-    }
 
-    // ──────────────────── DRAWING CORE ────────────────────
-
-    oCanvas.onmousedown = e => {
-        state.isDrawing = true;
-        const {x, y} = getMousePos(e);
-        state.startX = x; state.startY = y;
-    };
-
-    window.onmousemove = e => {
-        if (!state.isDrawing) return;
-        const {x, y} = getMousePos(e);
-        state.currentBox = {
-            x: Math.min(state.startX, x),
-            y: Math.min(state.startY, y),
-            w: Math.abs(x - state.startX),
-            h: Math.abs(y - state.startY)
-        };
-        drawAll();
-    };
-
-    window.onmouseup = () => {
-        if (state.isDrawing && state.currentBox && state.currentBox.w > 4) {
-            state.boxes.push(state.currentBox);
-        }
-        state.isDrawing = false;
-        state.currentBox = null;
-        drawAll();
-    };
-
-    function getMousePos(e) {
-        const rect = oCanvas.getBoundingClientRect();
-        // Here we must account for CSS scale!
-        return {
-            x: (e.clientX - rect.left) / state.zoom,
-            y: (e.clientY - rect.top) / state.zoom
-        };
-    }
-
-    function drawAll() {
-        oCtx.clearRect(0, 0, oCanvas.width, oCanvas.height);
-        oCtx.lineWidth = 3;
-        oCtx.strokeStyle = "#4f46e5";
+        // ═══════════════════════════════════════════════════════════════════════════
+        // DOM ELEMENTS
+        // ═══════════════════════════════════════════════════════════════════════════
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const processBtn = document.getElementById('processBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusMessage = document.getElementById('statusMessage');
+        const annotationSection = document.getElementById('annotationSection');
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const pageTabs = document.getElementById('pageTabs');
+        const boxList = document.getElementById('boxList');
+        const undoBtn = document.getElementById('undoBtn');
+        const clearPageBtn = document.getElementById('clearPageBtn');
+        const proceedBtn = document.getElementById('proceedBtn');
+        const resultsSection = document.getElementById('resultsSection');
+        const downloadXlsxBtn = document.getElementById('downloadXlsxBtn');
+        const downloadCsvBtn = document.getElementById('downloadCsvBtn');
         
-        state.boxes.forEach((b, i) => {
-            oCtx.strokeRect(b.x, b.y, b.w, b.h);
-            oCtx.fillStyle = "rgba(79, 70, 230, 0.2)";
-            oCtx.fillRect(b.x, b.y, b.w, b.h);
-            oCtx.fillStyle = "white";
-            oCtx.font = "bold 14px Inter";
-            oCtx.fillText(`#${i+1}`, b.x + 5, b.y + 18);
+        // New DOM elements
+        const canvasWrapper = document.getElementById('canvasWrapper');
+        const canvasViewport = document.getElementById('canvasViewport');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const resetZoomBtn = document.getElementById('resetZoomBtn');
+        const zoomLevelLabel = document.getElementById('zoomLevel');
+        const boxCountDisplay = document.getElementById('boxCountDisplay');
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // UTILITY FUNCTIONS
+        // ═══════════════════════════════════════════════════════════════════════════
+        function showStatus(message, type = 'info') {
+            statusMessage.textContent = message;
+            statusMessage.className = `status-message show ${type}`;
+        }
+
+        function hideStatus() {
+            statusMessage.className = 'status-message';
+        }
+
+        function setButtonState(disabled) {
+            processBtn.disabled = disabled;
+            proceedBtn.disabled = disabled || !hasAnnotations();
+        }
+
+        function hasAnnotations() {
+            return Object.keys(state.annotations).length > 0 &&
+                   Object.values(state.annotations).some(boxes => boxes.length > 0);
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // ZOOM LOGIC
+        // ═══════════════════════════════════════════════════════════════════════════
+        function updateZoomUI() {
+            canvasWrapper.style.transform = `scale(${state.zoom})`;
+            zoomLevelLabel.textContent = `${Math.round(state.zoom * 100)}%`;
+        }
+
+        zoomInBtn.onclick = () => {
+            state.zoom = Math.min(state.zoom + 0.1, 3.0);
+            updateZoomUI();
+        };
+
+        zoomOutBtn.onclick = () => {
+            state.zoom = Math.max(state.zoom - 0.1, 0.1);
+            updateZoomUI();
+        };
+
+        resetZoomBtn.onclick = () => {
+            if (state.images[state.currentPage - 1]) {
+                const img = state.images[state.currentPage - 1];
+                const vWidth = canvasViewport.clientWidth - 40;
+                const vHeight = canvasViewport.clientHeight - 40;
+                
+                // Calculate scale to fit both width and height
+                const scaleX = vWidth / img.width;
+                const scaleY = vHeight / img.height;
+                
+                state.zoom = Math.min(scaleX, scaleY, 1.0);
+                updateZoomUI();
+                
+                // Reset scroll
+                canvasViewport.scrollTop = 0;
+                canvasViewport.scrollLeft = 0;
+            }
+        };
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // FILE UPLOAD HANDLING
+        // ═══════════════════════════════════════════════════════════════════════════
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
         });
 
-        if (state.currentBox) {
-            oCtx.strokeStyle = "#22d3ee";
-            oCtx.lineWidth = 2;
-            oCtx.strokeRect(state.currentBox.x, state.currentBox.y, state.currentBox.w, state.currentBox.h);
-        }
-    }
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
 
-    document.getElementById('btn-clear').onclick = () => { state.boxes = []; drawAll(); };
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
 
-    // ──────────────────── BACKEND ANALYZE ────────────────────
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
 
-    document.getElementById('btn-analyze').onclick = async () => {
-        if (!state.boxes.length) return alert("Please draw some boxes.");
-        const btn = document.getElementById('btn-analyze');
-        btn.innerText = "Analyzing..."; btn.disabled = true;
-        
-        try {
-            const resp = await fetch('/process_crop', {
+        function handleFileSelect(file) {
+            state.file = file;
+            state.filename = file.name;
+            
+            showStatus('Uploading file...', 'info');
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/api/upload', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    filename: state.pages[state.currentIdx].name,
-                    page_idx: state.currentIdx,
-                    boxes: state.boxes
+                body: formData
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        state.filepath = data.filepath;
+                        state.imagePaths = data.image_paths;
+                        state.totalPages = data.total_pages;
+                        
+                        // Initialize annotations
+                        state.annotations = {};
+                        for (let i = 1; i <= state.totalPages; i++) {
+                            state.annotations[i] = [];
+                        }
+                        
+                        // Setup annotation UI
+                        setupAnnotationUI(data.images);
+                        annotationSection.classList.add('show');
+                        setButtonState(false);
+                        showStatus(`✓ Uploaded ${state.totalPages} page(s). Now annotate dimension regions.`, 'success');
+                    } else {
+                        showStatus(`Upload failed: ${data.error}`, 'error');
+                    }
                 })
+                .catch(err => {
+                    console.error('Upload error:', err);
+                    showStatus('Upload failed', 'error');
+                });
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // ANNOTATION SETUP
+        // ═══════════════════════════════════════════════════════════════════════════
+        function setupAnnotationUI(base64Images) {
+            pageTabs.innerHTML = '';
+            state.images = [];
+            
+            const loadPromises = base64Images.map((b64, i) => {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        state.images[i] = img;
+                        resolve();
+                    };
+                    img.src = 'data:image/png;base64,' + b64;
+                });
             });
-            const data = await resp.json();
-            state.results.push(...data.results);
-            renderResults();
-            state.boxes = []; drawAll();
-        } catch (err) { alert(err); }
-        finally { btn.innerText = "Process Page"; btn.disabled = false; }
-    };
 
-    function renderResults() {
-        resultsContainer.innerHTML = "";
-        [...state.results].reverse().forEach(r => {
-            const div = document.createElement('div');
-            div.className = 'res-card';
-            div.innerHTML = `
-                <div class="res-type">PG ${r.page} | ${r.type}</div>
-                <div class="res-val">${r.value}</div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-top: 5px;">"${r.raw_text}"</div>
-            `;
-            resultsContainer.appendChild(div);
+            Promise.all(loadPromises).then(() => {
+                // Create page tabs
+                for (let i = 0; i < state.totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.className = 'page-tab' + (i === 0 ? ' active' : '');
+                    btn.textContent = `Page ${i + 1}`;
+                    btn.dataset.page = i + 1;
+                    btn.addEventListener('click', () => switchPage(i + 1));
+                    pageTabs.appendChild(btn);
+                }
+                
+                // Load first page
+                switchPage(1);
+            });
+        }
+
+        function switchPage(pageNum) {
+            state.currentPage = pageNum;
+            const img = state.images[pageNum - 1];
+            if (!img) return;
+
+            // Update active tab
+            document.querySelectorAll('.page-tab').forEach(tab => {
+                tab.classList.remove('active');
+                if (parseInt(tab.dataset.page) === pageNum) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Setup canvas
+            canvas.width = img.width;
+            canvas.height = img.height;
+            canvasWrapper.style.width = `${img.width}px`;
+            canvasWrapper.style.height = `${img.height}px`;
+            
+            // Auto fit zoom for new page
+            resetZoomBtn.onclick();
+            
+            redraw();
+            updateBoxList();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // DRAWING CORE
+        // ═══════════════════════════════════════════════════════════════════════════
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Important: Handle CSS transform scale
+            return {
+                x: (e.clientX - rect.left) / state.zoom,
+                y: (e.clientY - rect.top) / state.zoom
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getMousePos(e);
+            state.isDrawing = true;
+            state.startX = pos.x;
+            state.startY = pos.y;
         });
-    }
 
-    document.getElementById('btn-export').onclick = () => { window.location.href='/export'; };
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isDrawing) return;
+            
+            const pos = getMousePos(e);
+            
+            redraw();
+            
+            // Draw preview box
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 2 / state.zoom; // Keep line thickness constant
+            ctx.setLineDash([5 / state.zoom, 5 / state.zoom]);
+            ctx.strokeRect(
+                Math.min(state.startX, pos.x),
+                Math.min(state.startY, pos.y),
+                Math.abs(pos.x - state.startX),
+                Math.abs(pos.y - state.startY)
+            );
+            ctx.setLineDash([]);
+        });
 
-    // Keyboard Undo
-    window.onkeydown = e => {
-        if (e.ctrlKey && e.key === 'z') { state.boxes.pop(); drawAll(); }
-    };
+        window.addEventListener('mouseup', (e) => {
+            if (!state.isDrawing) return;
+            
+            const pos = getMousePos(e);
+            
+            const box = {
+                x1: Math.min(state.startX, pos.x) / canvas.width,
+                y1: Math.min(state.startY, pos.y) / canvas.height,
+                x2: Math.max(state.startX, pos.x) / canvas.width,
+                y2: Math.max(state.startY, pos.y) / canvas.height
+            };
+            
+            // Area check
+            const w = Math.abs(pos.x - state.startX);
+            const h = Math.abs(pos.y - state.startY);
+            
+            if (w > 10 && h > 10) {
+                state.annotations[state.currentPage].push(box);
+                updateBoxList();
+                proceedBtn.disabled = !hasAnnotations();
+            }
+            
+            state.isDrawing = false;
+            redraw();
+        });
 
-</script>
+        function redraw() {
+            const img = state.images[state.currentPage - 1];
+            if (!img) return;
+            
+            // Clear
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            
+            // Draw boxes
+            const boxes = state.annotations[state.currentPage] || [];
+            boxes.forEach((box, i) => {
+                const x = box.x1 * canvas.width;
+                const y = box.y1 * canvas.height;
+                const w = (box.x2 - box.x1) * canvas.width;
+                const h = (box.y2 - box.y1) * canvas.height;
+                
+                ctx.strokeStyle = '#059669';
+                ctx.lineWidth = 3 / state.zoom;
+                ctx.strokeRect(x, y, w, h);
+                
+                ctx.fillStyle = 'rgba(5, 150, 105, 0.1)';
+                ctx.fillRect(x, y, w, h);
+                
+                // Draw ID
+                ctx.fillStyle = '#065f46';
+                ctx.font = `bold ${14/state.zoom}px Inter`;
+                ctx.fillText(`#${i+1}`, x + 5/state.zoom, y + 18/state.zoom);
+            });
+        }
 
+        function updateBoxList() {
+            const boxes = state.annotations[state.currentPage] || [];
+            boxList.innerHTML = '';
+            boxCountDisplay.textContent = boxes.length;
+            
+            boxes.forEach((box, idx) => {
+                const div = document.createElement('div');
+                div.className = 'box-item';
+                div.innerHTML = `
+                    <div>
+                        <strong style="color:var(--primary)">Box ${idx+1}</strong> 
+                        <span style="color:var(--neutral-400)">(${Math.round(box.x1*100)}%, ${Math.round(box.y1*100)}%)</span>
+                    </div>
+                    <button class="btn btn-delete" onclick="deleteBox(${idx})" title="Delete Box">×</button>
+                `;
+                boxList.appendChild(div);
+            });
+        }
+
+        window.deleteBox = function(idx) {
+            state.annotations[state.currentPage].splice(idx, 1);
+            redraw();
+            updateBoxList();
+            proceedBtn.disabled = !hasAnnotations();
+        };
+
+        // UI Controls
+        undoBtn.onclick = () => {
+            if (state.annotations[state.currentPage].length > 0) {
+                state.annotations[state.currentPage].pop();
+                redraw();
+                updateBoxList();
+                proceedBtn.disabled = !hasAnnotations();
+            }
+        };
+
+        clearPageBtn.onclick = () => {
+            if (confirm('Clear all boxes on this page?')) {
+                state.annotations[state.currentPage] = [];
+                redraw();
+                updateBoxList();
+                proceedBtn.disabled = !hasAnnotations();
+            }
+        };
+
+        // Keyboard support
+        window.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') {
+                undoBtn.onclick();
+            }
+        });
+
+        // ═══════════════════════════════════════════════════════════════════════════
+        // PROCESSING & RESULTS
+        // ═══════════════════════════════════════════════════════════════════════════
+        proceedBtn.addEventListener('click', () => {
+            showStatus('Extracting dimensions from annotated regions...', 'info');
+            setButtonState(true);
+            
+            fetch('/api/process', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    filepath: state.filepath,
+                    filename: state.filename,
+                    annotations: state.annotations
+                })
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        state.results = data.results;
+                        state.excelFile = data.xlsx_file;
+                        state.csvFile = data.csv_file;
+                        displayResults(data.results);
+                        showStatus('✓ Dimensions extracted successfully!', 'success');
+                    } else {
+                        showStatus(`Processing failed: ${data.error}`, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error('Processing error:', err);
+                    showStatus('Processing failed', 'error');
+                })
+                .finally(() => setButtonState(false));
+        });
+
+        function displayResults(data) {
+            document.getElementById('totalDimensions').textContent = data.total_dimensions;
+            document.getElementById('pagesProcessed').textContent = data.total_pages;
+            
+            const avgConf = data.data.reduce((sum, row) => sum + row.confidence, 0) / data.data.length;
+            document.getElementById('avgConfidence').textContent = Math.round(avgConf * 100) + '%';
+            
+            const tbody = document.getElementById('resultsTableBody');
+            tbody.innerHTML = '';
+            data.data.forEach(row => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td>${row.feature}</td>
+                    <td><strong>${row.value}</strong></td>
+                    <td>${row.unit}</td>
+                    <td>${row.type}</td>
+                    <td>${(row.confidence * 100).toFixed(0)}%</td>
+                    <td>${row.notes}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            
+            resultsSection.classList.add('show');
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        downloadXlsxBtn.onclick = () => window.location.href = `/api/download/${state.excelFile}`;
+        downloadCsvBtn.onclick = () => window.location.href = `/api/download/${state.csvFile}`;
+
+        clearBtn.onclick = () => location.reload();
+
+    </script>
 </body>
 </html>
