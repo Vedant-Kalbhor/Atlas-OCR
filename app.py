@@ -315,68 +315,80 @@ def normalize_text(text):
 
 def parse_dimensions(text, page_num=1):
     """
-    Extract dimensions from text using comprehensive regex patterns
-    Returns list of (value, unit, type, feature_name, confidence) tuples
+    Extract engineering dimensions from OCR text.
+    Returns list of (value, unit, type, feature_name, confidence) tuples.
+    Patterns are checked in priority order; consumed spans are excluded from linear fallback.
     """
     results = []
+    consumed_spans = set()  # Track which char positions are already matched
     if not text:
         return results
-    
+
     norm = normalize_text(text)
-    
+
+    def mark(m):
+        """Record match span as consumed so linear fallback ignores it."""
+        for i in range(m.start(), m.end()):
+            consumed_spans.add(i)
+
     try:
-        # Pattern 1: Thread specifications (M8x1.0, M10x1.5, etc.)
-        for m in re.finditer(r'\bM(\d+\.?\d*)\s*[xX×\s]*\s*(\d+\.?\d*)?', norm):
-            value = m.group(1)
-            if m.group(2):
-                value += f'x{m.group(2)}'
-            results.append((value, 'mm', 'thread', f'thread_M{value}', 0.85))
-        
-        # Pattern 2: Hole specifications (6 HOLES - Ø10, etc.)
+        # ── Priority 1: Threads  M8  M10x1.5 ──
+        for m in re.finditer(r'\bM(\d+\.?\d*)(?:\s*[xX×]\s*(\d+\.?\d*))?', norm, re.IGNORECASE):
+            v = m.group(1)
+            if m.group(2): v += f'x{m.group(2)}'
+            results.append((v, 'mm', 'thread', f'thread_M{v}', 0.92))
+            mark(m)
+
+        # ── Priority 2: Holes  6 HOLES Ø6.5 ──
         for m in re.finditer(r'(\d+)\s*HOLES?\s*[-–—\s]*[Ø$]?\s*(\d+\.?\d*)', norm, re.IGNORECASE):
-            hole_count = m.group(1)
-            hole_dia = m.group(2)
-            results.append((hole_count, 'count', 'hole_count', f'holes_{hole_count}', 0.90))
-            results.append((hole_dia, 'mm', 'hole_diameter', f'hole_diameter_{hole_dia}', 0.85))
-        
-        # Pattern 3: Counterbore specifications (CB 10 5, etc.)
+            results.append((m.group(1), 'count', 'hole_count', f'holes_{m.group(1)}', 0.92))
+            results.append((m.group(2), 'mm', 'hole_diameter', f'hole_dia_{m.group(2)}', 0.90))
+            mark(m)
+
+        # ── Priority 3: Counterbore  CB Ø10 ↓5 ──
         for m in re.finditer(
-            r'C\.?B\.?\s*[Ø$]?\s*(\d+\.?\d*)\s*(?:[↓⬇VvL]|OL|OI|depth)?\s*(\d+\.?\d*)?',
+            r'C\.?B\.?\s*[Ø$]?\s*(\d+\.?\d*)(?:\s*(?:[↓⬇VvL]|depth)\s*(\d+\.?\d*))?',
             norm, re.IGNORECASE
         ):
-            cb_dia = m.group(1)
-            results.append((cb_dia, 'mm', 'counterbore_dia', f'counterbore_dia_{cb_dia}', 0.80))
-            
+            results.append((m.group(1), 'mm', 'counterbore_dia', f'cb_dia_{m.group(1)}', 0.88))
             if m.group(2):
-                cb_depth = m.group(2)
-                results.append((cb_depth, 'mm', 'counterbore_depth', f'counterbore_depth_{cb_depth}', 0.75))
-        
-        # Pattern 4: Diameter specifications (Ø10, Ø12.5, etc.)
+                results.append((m.group(2), 'mm', 'counterbore_depth', f'cb_depth_{m.group(2)}', 0.85))
+            mark(m)
+
+        # ── Priority 4: Diameter  Ø12.5 ──
         for m in re.finditer(r'Ø\s*(\d+\.?\d*)', norm):
-            dia = m.group(1)
-            results.append((dia, 'mm', 'diameter', f'diameter_{dia}', 0.88))
-        
-        # Pattern 5: Radius specifications (R10, R1.5, etc.)
-        for m in re.finditer(r'\bR\s*(\d+\.?\d*)', norm, re.IGNORECASE):
-            radius = m.group(1)
-            # Avoid false positives in words
-            if not re.search(r'[A-Z]{3,}', norm[max(0, m.start()-5):m.end()+5]):
-                results.append((radius, 'mm', 'radius', f'radius_{radius}', 0.87))
-        
-        # Pattern 6: Linear dimensions - 2+ digits (100, 12.5, 25, etc.)
-        for m in re.finditer(r'(?<!\d|Ø|M|R|x)(\d{2,}\.?\d*)(?!\d)', norm):
-            if not any(char.isalpha() for char in norm[m.start()-2:m.start()]):
-                dimension = m.group(1)
-                results.append((dimension, 'mm', 'linear', f'dim_{dimension}', 0.82))
-        
-        # Pattern 7: Single digit dimensions (1-9 only, not 0)
-        for m in re.finditer(r'(?<![0-9Ø M R])([1-9])(?![0-9])', norm):
-            dimension = m.group(1)
-            results.append((dimension, 'mm', 'linear', f'dim_{dimension}', 0.75))
-        
+            results.append((m.group(1), 'mm', 'diameter', f'dia_{m.group(1)}', 0.90))
+            mark(m)
+
+        # ── Priority 5: Radius  R10 ──
+        for m in re.finditer(r'\bR(\d+\.?\d*)\b', norm):
+            # Skip if inside a longer word (e.g. "REVISION")
+            before = norm[max(0, m.start()-1):m.start()]
+            if not before or not before[-1].isalpha():
+                results.append((m.group(1), 'mm', 'radius', f'radius_{m.group(1)}', 0.87))
+                mark(m)
+
+# ── Priority 6: Linear fallback — only numbers NOT already matched ──
+        # Requires: number is 2+ chars OR has decimal. Must NOT be adjacent to letters.
+        already_found_values = {r[0] for r in results}  # values captured by specific patterns
+        for m in re.finditer(r'(?<![A-Za-zØ.])(\d+\.\d+|\d{2,})(?![A-Za-z.\d])', norm):
+            # Skip if already consumed by a specific pattern above
+            if any(i in consumed_spans for i in range(m.start(), m.end())):
+                continue
+            v = m.group(1)
+            # Skip if this is a leading-zero misread of an already-found value
+            # e.g. '0169' when 'Ø169' → '169' has already been captured as diameter
+            v_stripped = v.lstrip('0') or '0'
+            if v_stripped in already_found_values:
+                continue
+            # Skip obviously non-dimensional: all zeros, very large (>9999)
+            if v in ('00', '000') or float(v) > 9999:
+                continue
+            results.append((v, 'mm', 'linear', f'dim_{v}', 0.80))
+
     except Exception as e:
         log.error(f"Error parsing dimensions: {e}")
-    
+
     return results
 
 def deduplicate_dimensions(all_dimensions):
@@ -390,138 +402,147 @@ def deduplicate_dimensions(all_dimensions):
     return list(seen.values())
 
 # ──────────────────── BOUNDING BOX PROCESSING ────────────────────
-def process_page_hybrid(image_path, page_num, model, annotations):
+def crop_and_ocr_box(image_bgr, box_norm, page_num, model, box_idx):
     """
-    Hybrid Approach: Run docTR on the FULL image for context-aware accuracy,
-    but only return dimensions that fall inside the user's manual bounding boxes.
+    Crops a region from a high-DPI image using normalized coordinates,
+    then runs docTR on the crop and extracts all dimensions.
     """
-    dimensions = []
+    h, w = image_bgr.shape[:2]
+    
+    buf = 20  # pixels of padding
+    x1 = max(0,   int(box_norm['x1'] * w) - buf)
+    y1 = max(0,   int(box_norm['y1'] * h) - buf)
+    x2 = min(w,   int(box_norm['x2'] * w) + buf)
+    y2 = min(h,   int(box_norm['y2'] * h) + buf)
+    
+    if x2 <= x1 or y2 <= y1:
+        log.warning(f"  Box {box_idx}: Invalid crop region. Skipping.")
+        return []
+    
+    crop = image_bgr[y1:y2, x1:x2]
+    log.info(f"  Box {box_idx}: Crop shape = {crop.shape}, region = ({x1},{y1})->({x2},{y2}) on ({w}x{h}) image")
+    
+    tmp_path = os.path.join(tempfile.gettempdir(), f'crop_p{page_num}_b{box_idx}_{datetime.now().strftime("%H%M%S%f")}.png')
+    cv2.imwrite(tmp_path, crop)
+    
+    found_dims = []
     try:
-        # 1. Run docTR on the FULL image (allows the engine to see high-res context)
-        doc = DocumentFile.from_images(image_path)
+        doc = DocumentFile.from_images(tmp_path)
         result = model(doc).export()
-        page = result['pages'][0]
-        h_img, w_img = page['dimensions'] # Scale relative to 1.0
         
-        # 2. Extract dimensions from every line/word, but check if they are inside any user box
-        for block in page['blocks']:
+        # Collect ALL text from OCR result into a single string
+        all_lines = []
+        all_words = set()  # unique words for individual parsing
+        for block in result['pages'][0]['blocks']:
             for line in block['lines']:
-                # Get geometry of the line [ (xmin, ymin), (xmax, ymax) ]
-                # docTR typically returns geometry as [[xmin, ymin], [xmax, ymax]] normalized 0-1
-                geom = line['geometry']
-                l_x1, l_y1 = geom[0]
-                l_x2, l_y2 = geom[1]
-                
-                # Check if this line overlaps with any user annotation
-                is_selected = False
-                for box in annotations:
-                    # box coordinates are x1, y1, x2, y2 normalized 0-1 from frontend
-                    if not (l_x2 < box['x1'] or l_x1 > box['x2'] or l_y2 < box['y1'] or l_y1 > box['y2']):
-                        is_selected = True
-                        break
-                
-                if is_selected:
-                    line_text = " ".join([w['value'] for w in line['words']])
-                    found = parse_dimensions(line_text, page_num)
-                    
-                    # Store unique dimensions found in this line
-                    for (v, u, t, f, c) in found:
-                        dimensions.append({
-                            'value': v,
-                            'unit': u,
-                            'type': t,
-                            'feature': f,
-                            'confidence': c
-                        })
-                        
-                    # Also check words individually if they have high confidence
-                    for word in line['words']:
-                        if word['confidence'] > MIN_CONFIDENCE:
-                            w_geom = word['geometry']
-                            w_x1, w_y1 = w_geom[0]
-                            w_x2, w_y2 = w_geom[1]
-                            
-                            # Check word-level overlap
-                            w_selected = False
-                            for box in annotations:
-                                if not (w_x2 < box['x1'] or w_x1 > box['x2'] or w_y2 < box['y1'] or w_y1 > box['y2']):
-                                    w_selected = True
-                                    break
-                            
-                            if w_selected:
-                                word_dims = parse_dimensions(word['value'], page_num)
-                                for (v, u, t, f, c) in word_dims:
-                                    dimensions.append({
-                                        'value': v,
-                                        'unit': u,
-                                        'type': t,
-                                        'feature': f,
-                                        'confidence': c
-                                    })
-                                    
-    except Exception as e:
-        log.error(f"Error in hybrid processing for p{page_num}: {e}")
+                line_text = " ".join([w['value'] for w in line['words']])
+                if line_text.strip():
+                    all_lines.append(line_text.strip())
+                for word in line['words']:
+                    if word['confidence'] > MIN_CONFIDENCE and word['value'].strip():
+                        all_words.add(word['value'].strip())
         
-    return dimensions
+        raw_text = " ".join(all_lines)
+        log.info(f"  Box {box_idx}: Raw OCR text = '{raw_text}'")
+        
+        if not raw_text.strip():
+            log.warning(f"  Box {box_idx}: No text detected by docTR")
+            return []
+        
+        # ── Single pass: parse the whole combined line text ──
+        # This is the most important call — multi-word patterns like "6 HOLES Ø6.5" only work here.
+        found_dims = parse_dimensions(raw_text, page_num)
+        
+        # ── Word-level fallback: for any word not already covered ──
+        # This catches single-token values like "Ø12" or "M8" that may appear alone.
+        captured_values = {d[0] for d in found_dims}
+        for word in all_words:
+            word_dims = parse_dimensions(word, page_num)
+            for wd in word_dims:
+                if wd[0] not in captured_values:
+                    found_dims.append(wd)
+                    captured_values.add(wd[0])
+        
+    except Exception as e:
+        log.error(f"  Box {box_idx}: docTR failed — {e}")
+    finally:
+        try: os.remove(tmp_path)
+        except: pass
+    
+    return found_dims
+
 
 # ──────────────────── MAIN PROCESSING ────────────────────
 def process_drawing_with_annotations(filepath, filename, annotations):
     """
     Process CAD drawing with user-provided bounding box annotations.
-    Restores high-accuracy docTR performance.
+    Approach: Crop each annotated box at high DPI, run docTR on the crop.
     """
     cleanup_files = []
     try:
         ext = filename.lower().rsplit('.', 1)[-1]
         
-        # 1. Prepare images
+        # Render PDF pages at HIGH DPI for accurate crops
         if ext == 'pdf':
-            image_paths = pdf_to_images(filepath)
+            image_paths = pdf_to_images(filepath)  # 600 DPI
             cleanup_files.extend(image_paths)
         else:
             image_paths = [filepath]
         
-        # 2. Initialize Model
         model = get_doctr_model()
         all_data = []
         seen = set()
         
-        # 3. Process each page using the Hybrid method
         for page_idx, image_path in enumerate(image_paths):
             page_num = page_idx + 1
-            page_key = str(page_num)
+            page_annos = annotations.get(str(page_num), [])
             
-            # Use annotations for this page
-            page_annos = annotations.get(page_key, [])
             if not page_annos:
+                log.info(f"Page {page_num}: No annotations, skipping.")
                 continue
+            
+            log.info(f"Page {page_num}: Processing {len(page_annos)} box(es) from '{image_path}'")
+            
+            # Load this page's full high-DPI image
+            img = cv2.imread(image_path)
+            if img is None:
+                log.error(f"Page {page_num}: Could not read image file: {image_path}")
+                continue
+            
+            log.info(f"Page {page_num}: Image loaded — {img.shape[1]}x{img.shape[0]}px")
+            
+            for box_idx, box in enumerate(page_annos):
+                log.info(f"  Box {box_idx+1}: normalized coords = {box}")
+                raw_dims = crop_and_ocr_box(img, box, page_num, model, box_idx + 1)
                 
-            log.info(f"Hybrid processing Page {page_num} with {len(page_annos)} boxes")
-            
-            # Core Hybrid Flow: OCR Full Page -> Filter by Boxes
-            raw_dims = process_page_hybrid(image_path, page_num, model, page_annos)
-            
-            # Dedup and Clean
-            unique_dims = deduplicate_dimensions([(d['value'], d['unit'], d['type'], d['feature'], d['confidence']) for d in raw_dims])
-            
-            for (v, u, t, f, conf) in unique_dims:
-                key = (page_num, v, t)
-                if key not in seen:
-                    seen.add(key)
-                    all_data.append({
-                        'id': str(len(all_data) + 1),
-                        'feature': f,
-                        'value': v,
-                        'unit': u,
-                        'type': t,
-                        'confidence': round(conf, 2),
-                        'notes': f'page {page_num}'
-                    })
+                # Dedup within page (raw_dims is already a list of 5-tuples)
+                unique_dims = deduplicate_dimensions(raw_dims)
+                
+                for (v, u, t, f, conf) in unique_dims:
+                    key = (page_num, v, t)
+                    if key not in seen:
+                        seen.add(key)
+                        all_data.append({
+                            'id': str(len(all_data) + 1),
+                            'feature': f,
+                            'value': v,
+                            'unit': u,
+                            'type': t,
+                            'confidence': round(conf, 2),
+                            'notes': f'page {page_num}, box {box_idx+1}'
+                        })
+        
+        log.info(f"Total dimensions extracted: {len(all_data)}")
         
         if not all_data:
-            return None, "No dimensions found in the annotated regions. Try drawing larger boxes around the text.", None, None
+            return None, (
+                "No dimensions found. Tips:\n"
+                "1. Draw boxes tightly around dimension text\n"
+                "2. Make sure the PDF text is selectable (not scanned)\n"
+                "3. Check server logs for OCR raw output"
+            ), None, None
             
-        # 4. Generate Output Files
+        # Generate Output
         df = pd.DataFrame(all_data)
         columns = ['id', 'feature', 'value', 'unit', 'type', 'confidence', 'notes']
         df = df[columns]
@@ -529,13 +550,10 @@ def process_drawing_with_annotations(filepath, filename, annotations):
         temp_dir = tempfile.gettempdir()
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         xlsx_filename = f'dimensions_{ts}.xlsx'
-        csv_filename = f'dimensions_{ts}.csv'
+        csv_filename  = f'dimensions_{ts}.csv'
         
-        xlsx_path = os.path.join(temp_dir, xlsx_filename)
-        csv_path = os.path.join(temp_dir, csv_filename)
-        
-        df.to_excel(xlsx_path, index=False)
-        df.to_csv(csv_path, index=False)
+        df.to_excel(os.path.join(temp_dir, xlsx_filename), index=False)
+        df.to_csv(os.path.join(temp_dir, csv_filename), index=False)
         
         return {
             'columns': columns,
@@ -545,12 +563,13 @@ def process_drawing_with_annotations(filepath, filename, annotations):
         }, None, xlsx_filename, csv_filename
 
     except Exception as e:
-        log.error(f"Hybrid export failed: {e}", exc_info=True)
+        log.error(f"Processing failed: {e}", exc_info=True)
         return None, str(e), None, None
     finally:
         for p in cleanup_files:
             try: os.remove(p)
             except: pass
+
 
 # ──────────────────── FLASK ROUTES ────────────────────
 @app.route('/')

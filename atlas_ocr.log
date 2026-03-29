@@ -104,3 +104,180 @@
 2026-03-29 11:08:38,669 [INFO] Hybrid processing Page 7 with 6 boxes
 2026-03-29 11:08:47,822 [INFO] Hybrid processing Page 8 with 5 boxes
 2026-03-29 11:08:55,810 [INFO] 127.0.0.1 - - [29/Mar/2026 11:08:55] "POST /api/process HTTP/1.1" 200 -
+2026-03-29 16:38:56,907 [INFO] Starting Atlas OCR with docTR backend...
+2026-03-29 16:38:57,076 [INFO] CUDA available: True
+2026-03-29 16:38:57,077 [INFO] Loading docTR model...
+2026-03-29 16:38:59,417 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\db_resnet50-79bd7d70.pt
+2026-03-29 16:39:00,773 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\parseq-56125471.pt
+2026-03-29 16:39:01,242 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\mobilenet_v3_small_crop_orientation-f0847a18.pt
+2026-03-29 16:39:01,498 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\mobilenet_v3_small_page_orientation-8e60325c.pt
+2026-03-29 16:39:01,593 [INFO] Using device: cuda
+2026-03-29 16:39:02,206 [INFO] Model loaded on CUDA (GPU)
+2026-03-29 16:39:03,703 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.207.115.207:5000
+2026-03-29 16:39:03,704 [INFO] [33mPress CTRL+C to quit[0m
+2026-03-29 16:39:19,066 [INFO] 127.0.0.1 - - [29/Mar/2026 16:39:19] "GET / HTTP/1.1" 200 -
+2026-03-29 16:39:19,429 [INFO] 127.0.0.1 - - [29/Mar/2026 16:39:19] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-03-29 16:39:28,931 [INFO] File uploaded: C:\Users\vedan\AppData\Local\Temp\20260329_163928_Sample.pdf
+2026-03-29 16:39:31,397 [INFO] Extracted page 1/1
+2026-03-29 16:39:31,597 [INFO] 127.0.0.1 - - [29/Mar/2026 16:39:31] "POST /api/upload HTTP/1.1" 200 -
+2026-03-29 16:41:01,074 [INFO] Processing with annotations: {'1': [{'x1': 0.7736549176631939, 'y1': 0.5974067892325082, 'x2': 0.8170082397581744, 'y2': 0.6240282800359932}, {'x1': 0.6259113594710898, 'y1': 0.6039338205736965, 'x2': 0.6726873122577791, 'y2': 0.6321687350622414}, {'x1': 0.4992740238778575, 'y1': 0.47243979024133126, 'x2': 0.5135349850933115, 'y2': 0.5289096192184207}, {'x1': 0.3081771435907728, 'y1': 0.28770276906991166, 'x2': 0.34639651964818974, 'y2': 0.31109741250327727}, {'x1': 0.11875368659233428, 'y1': 0.31499429874572404, 'x2': 0.1489895261408124, 'y2': 0.3449258836944128}]}
+2026-03-29 16:41:02,345 [INFO] Extracted page 1/1
+2026-03-29 16:41:02,411 [INFO] Page 1: Processing 5 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_163928_Sample.pdf_p0.png'
+2026-03-29 16:41:03,320 [INFO] Page 1: Image loaded — 9922x7016px
+2026-03-29 16:41:03,323 [INFO]   Box 1: normalized coords = {'x1': 0.7736549176631939, 'y1': 0.5974067892325082, 'x2': 0.8170082397581744, 'y2': 0.6240282800359932}
+2026-03-29 16:41:03,324 [INFO]   Box 1: Crop shape = (227, 470, 3), region = (7656,4171)->(8126,4398) on (9922x7016) image
+2026-03-29 16:41:07,497 [INFO]   Box 1: Raw OCR text = '00 | - | - | 00 | 00 | 00 | 00 | ( | - | I | - | I | - | - | - | 00 | 00 | 00 | - | 1 | - | - | 0 | 100 | 2 | 2 | -'
+2026-03-29 16:41:07,499 [INFO]   Box 2: normalized coords = {'x1': 0.6259113594710898, 'y1': 0.6039338205736965, 'x2': 0.6726873122577791, 'y2': 0.6321687350622414}
+2026-03-29 16:41:07,499 [INFO]   Box 2: Crop shape = (238, 504, 3), region = (6190,4217)->(6694,4455) on (9922x7016) image
+2026-03-29 16:41:08,633 [INFO]   Box 2: Raw OCR text = '/ | 00 | $ | - | - | - | - | 6 | - | - | - | 6'
+2026-03-29 16:41:08,636 [INFO]   Box 3: normalized coords = {'x1': 0.4992740238778575, 'y1': 0.47243979024133126, 'x2': 0.5135349850933115, 'y2': 0.5289096192184207}
+2026-03-29 16:41:08,637 [INFO]   Box 3: Crop shape = (436, 182, 3), region = (4933,3294)->(5115,3730) on (9922x7016) image
+2026-03-29 16:41:10,096 [INFO]   Box 3: Raw OCR text = '00 | 0 | - | 00 00 | 1 | - | I | ( | - | 3 | 11 | - | 00 | 3'
+2026-03-29 16:41:10,108 [INFO]   Box 4: normalized coords = {'x1': 0.3081771435907728, 'y1': 0.28770276906991166, 'x2': 0.34639651964818974, 'y2': 0.31109741250327727}
+2026-03-29 16:41:10,110 [INFO]   Box 4: Crop shape = (204, 419, 3), region = (3037,1998)->(3456,2202) on (9922x7016) image
+2026-03-29 16:41:11,847 [INFO]   Box 4: Raw OCR text = '- | - | 4 | - | - | - 00 | I | L ) | - | 00 | - | 0'
+2026-03-29 16:41:11,856 [INFO]   Box 5: normalized coords = {'x1': 0.11875368659233428, 'y1': 0.31499429874572404, 'x2': 0.1489895261408124, 'y2': 0.3449258836944128}
+2026-03-29 16:41:11,858 [INFO]   Box 5: Crop shape = (250, 340, 3), region = (1158,2190)->(1498,2440) on (9922x7016) image
+2026-03-29 16:41:13,297 [INFO]   Box 5: Raw OCR text = '- | - | 00 | - | - | - | - | ) | - | - | ) | a | 4 | - | - | - | - | - | -'
+2026-03-29 16:41:13,300 [INFO] Total dimensions extracted: 8
+2026-03-29 16:41:14,352 [INFO] 127.0.0.1 - - [29/Mar/2026 16:41:14] "POST /api/process HTTP/1.1" 200 -
+2026-03-29 16:43:01,816 [INFO] 127.0.0.1 - - [29/Mar/2026 16:43:01] "GET /api/download/dimensions_20260329_164113.xlsx HTTP/1.1" 200 -
+2026-03-29 16:45:00,882 [INFO] 127.0.0.1 - - [29/Mar/2026 16:45:00] "GET / HTTP/1.1" 200 -
+2026-03-29 16:45:09,902 [INFO] File uploaded: C:\Users\vedan\AppData\Local\Temp\20260329_164509_Sample.pdf
+2026-03-29 16:45:11,096 [INFO] Extracted page 1/1
+2026-03-29 16:45:11,184 [INFO] 127.0.0.1 - - [29/Mar/2026 16:45:11] "POST /api/upload HTTP/1.1" 200 -
+2026-03-29 16:45:25,985 [INFO] Processing with annotations: {'1': [{'x1': 0.6025216033044917, 'y1': 0.34806629834254144, 'x2': 0.8395290087650583, 'y2': 0.6629834254143647}, {'x1': 0.10767097651869319, 'y1': 0.2578268876611418, 'x2': 0.5582454945920782, 'y2': 0.6243093922651933}]}
+2026-03-29 16:45:27,386 [INFO] Extracted page 1/1
+2026-03-29 16:45:27,460 [INFO] Page 1: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_164509_Sample.pdf_p0.png'
+2026-03-29 16:45:28,312 [INFO] Page 1: Image loaded — 9922x7016px
+2026-03-29 16:45:28,312 [INFO]   Box 1: normalized coords = {'x1': 0.6025216033044917, 'y1': 0.34806629834254144, 'x2': 0.8395290087650583, 'y2': 0.6629834254143647}
+2026-03-29 16:45:28,313 [INFO]   Box 1: Crop shape = (2249, 2391, 3), region = (5958,2422)->(8349,4671) on (9922x7016) image
+2026-03-29 16:45:32,207 [INFO]   Box 1: Raw OCR text = '0169 | I | 0122 | 00 | 00 00 00 | . 000 | * | I | - | I - | I I | I I I | I | / : | - | I | L | L | I | 000 000'
+2026-03-29 16:45:32,217 [INFO]   Box 2: normalized coords = {'x1': 0.10767097651869319, 'y1': 0.2578268876611418, 'x2': 0.5582454945920782, 'y2': 0.6243093922651933}
+2026-03-29 16:45:32,218 [INFO]   Box 2: Crop shape = (2612, 4510, 3), region = (1048,1788)->(5558,4400) on (9922x7016) image
+2026-03-29 16:45:36,683 [INFO]   Box 2: Raw OCR text = '00 | - | 410 | L | 100 | 10 | A - | - | I I | I | I | I | I | I | I | I | I | I | I I 0133 | L'
+2026-03-29 16:45:36,695 [INFO] Total dimensions extracted: 9
+2026-03-29 16:45:36,828 [INFO] 127.0.0.1 - - [29/Mar/2026 16:45:36] "POST /api/process HTTP/1.1" 200 -
+2026-03-29 16:46:43,174 [INFO] 127.0.0.1 - - [29/Mar/2026 16:46:43] "GET /api/download/dimensions_20260329_164536.xlsx HTTP/1.1" 200 -
+2026-03-29 16:55:04,180 [INFO] Starting Atlas OCR with docTR backend...
+2026-03-29 16:55:04,201 [INFO] CUDA available: True
+2026-03-29 16:55:04,201 [INFO] Loading docTR model...
+2026-03-29 16:55:04,814 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\db_resnet50-79bd7d70.pt
+2026-03-29 16:55:05,211 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\parseq-56125471.pt
+2026-03-29 16:55:05,323 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\mobilenet_v3_small_crop_orientation-f0847a18.pt
+2026-03-29 16:55:05,393 [INFO] Using downloaded & verified file: C:\Users\vedan\.cache\doctr\models\mobilenet_v3_small_page_orientation-8e60325c.pt
+2026-03-29 16:55:05,413 [INFO] Using device: cuda
+2026-03-29 16:55:05,602 [INFO] Model loaded on CUDA (GPU)
+2026-03-29 16:55:06,909 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.207.115.207:5000
+2026-03-29 16:55:06,910 [INFO] [33mPress CTRL+C to quit[0m
+2026-03-29 16:55:10,930 [INFO] 127.0.0.1 - - [29/Mar/2026 16:55:10] "GET / HTTP/1.1" 200 -
+2026-03-29 16:55:17,429 [INFO] File uploaded: C:\Users\vedan\AppData\Local\Temp\20260329_165517_Sample.pdf
+2026-03-29 16:55:18,965 [INFO] Extracted page 1/1
+2026-03-29 16:55:19,096 [INFO] 127.0.0.1 - - [29/Mar/2026 16:55:19] "POST /api/upload HTTP/1.1" 200 -
+2026-03-29 16:55:39,209 [INFO] Processing with annotations: {'1': [{'x1': 0.6129395112368243, 'y1': 0.3388581952117864, 'x2': 0.8356222932904336, 'y2': 0.6648250460405157}, {'x1': 0.11027545350177634, 'y1': 0.2523020257826888, 'x2': 0.5439208711851208, 'y2': 0.6132596685082874}]}
+2026-03-29 16:55:40,556 [INFO] Extracted page 1/1
+2026-03-29 16:55:40,618 [INFO] Page 1: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165517_Sample.pdf_p0.png'
+2026-03-29 16:55:41,990 [INFO] Page 1: Image loaded — 9922x7016px
+2026-03-29 16:55:41,990 [INFO]   Box 1: normalized coords = {'x1': 0.6129395112368243, 'y1': 0.3388581952117864, 'x2': 0.8356222932904336, 'y2': 0.6648250460405157}
+2026-03-29 16:55:41,991 [INFO]   Box 1: Crop shape = (2327, 2250, 3), region = (6061,2357)->(8311,4684) on (9922x7016) image
+2026-03-29 16:55:45,038 [INFO]   Box 1: Raw OCR text = 'I 100 y I I I I I I L - I - I - I A - A PRIS I 0122 0169'
+2026-03-29 16:55:45,041 [INFO]   Box 2: normalized coords = {'x1': 0.11027545350177634, 'y1': 0.2523020257826888, 'x2': 0.5439208711851208, 'y2': 0.6132596685082874}
+2026-03-29 16:55:45,042 [INFO]   Box 2: Crop shape = (2572, 4342, 3), region = (1074,1750)->(5416,4322) on (9922x7016) image
+2026-03-29 16:55:46,559 [INFO]   Box 2: Raw OCR text = '410 L L 10 1 + A I I I I I I I I - I I I : 0133 T'
+2026-03-29 16:55:46,561 [INFO] Total dimensions extracted: 9
+2026-03-29 16:55:47,141 [INFO] 127.0.0.1 - - [29/Mar/2026 16:55:47] "POST /api/process HTTP/1.1" 200 -
+2026-03-29 16:57:24,633 [INFO] 127.0.0.1 - - [29/Mar/2026 16:57:24] "GET /api/download/dimensions_20260329_165546.xlsx HTTP/1.1" 200 -
+2026-03-29 16:57:24,656 [INFO] 127.0.0.1 - - [29/Mar/2026 16:57:24] "GET /api/download/dimensions_20260329_165546.xlsx HTTP/1.1" 200 -
+2026-03-29 16:57:34,400 [INFO] 127.0.0.1 - - [29/Mar/2026 16:57:34] "GET / HTTP/1.1" 200 -
+2026-03-29 16:57:41,651 [INFO] File uploaded: C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf
+2026-03-29 16:57:42,291 [INFO] Extracted page 1/8
+2026-03-29 16:57:42,901 [INFO] Extracted page 2/8
+2026-03-29 16:57:43,550 [INFO] Extracted page 3/8
+2026-03-29 16:57:44,241 [INFO] Extracted page 4/8
+2026-03-29 16:57:44,895 [INFO] Extracted page 5/8
+2026-03-29 16:57:45,979 [INFO] Extracted page 6/8
+2026-03-29 16:57:47,182 [INFO] Extracted page 7/8
+2026-03-29 16:57:48,351 [INFO] Extracted page 8/8
+2026-03-29 16:57:48,756 [INFO] 127.0.0.1 - - [29/Mar/2026 16:57:48] "POST /api/upload HTTP/1.1" 200 -
+2026-03-29 17:00:10,657 [INFO] Processing with annotations: {'1': [{'x1': 0.1623734672324319, 'y1': 0.5444500046759899, 'x2': 0.4462544569617746, 'y2': 0.8556838904955111}, {'x1': 0.16367567360733715, 'y1': 0.08772808939053868, 'x2': 0.41500150396404883, 'y2': 0.5002511096483655}], '2': [{'x1': 0.3537978043435024, 'y1': 0.21111667134265655, 'x2': 0.5842883327017303, 'y2': 0.6623137247496547}, {'x1': 0.03866386161643397, 'y1': 0.2055918094642035, 'x2': 0.31994043859596616, 'y2': 0.6586304834973526}], '3': [{'x1': 0.13242272060961136, 'y1': 0.2578268876611418, 'x2': 0.3993750274651859, 'y2': 0.6482504604051565}, {'x1': 0.4306279804629117, 'y1': 0.2670349907918969, 'x2': 0.5660574434530569, 'y2': 0.6316758747697975}], '4': [{'x1': 0.008713114993613404, 'y1': 0.29097605893186007, 'x2': 0.2118573094788311, 'y2': 0.41436464088397795}, {'x1': 0.27306100909937747, 'y1': 0.2375690607734807, 'x2': 0.47620520358459517, 'y2': 0.7366482504604053}, {'x1': 0.48532064820893184, 'y1': 0.19638372389651135, 'x2': 0.6663273343207604, 'y2': 0.72124560234955}], '5': [{'x1': 0.15716464173281097, 'y1': 0.0865561694290976, 'x2': 0.4892272673336476, 'y2': 0.5616942909760589}, {'x1': 0.06991681461415976, 'y1': 0.5837937384898712, 'x2': 0.45016107608649036, 'y2': 0.9208103130755065}], '6': [{'x1': 0.18581318198072627, 'y1': 0.2523020257826888, 'x2': 0.6233545239488875, 'y2': 0.6206261510128914}], '7': [{'x1': 0.0555925444902021, 'y1': 0.04352919436291437, 'x2': 0.5191780139564681, 'y2': 0.44500249086383525}, {'x1': 0.08554329111302265, 'y1': 0.4445002434662034, 'x2': 0.5530353797040044, 'y2': 0.9712037425453931}], '8': [{'x1': 0.47880961633440566, 'y1': 0.4682738583390884, 'x2': 0.7001847000682967, 'y2': 0.7666163997755525}, {'x1': 0.041268274366244445, 'y1': 0.16808972437737396, 'x2': 0.4084904720895226, 'y2': 0.7684580485026042}]}
+2026-03-29 17:00:11,273 [INFO] Extracted page 1/8
+2026-03-29 17:00:11,907 [INFO] Extracted page 2/8
+2026-03-29 17:00:12,477 [INFO] Extracted page 3/8
+2026-03-29 17:00:13,223 [INFO] Extracted page 4/8
+2026-03-29 17:00:13,513 [INFO] Extracted page 5/8
+2026-03-29 17:00:13,746 [INFO] Extracted page 6/8
+2026-03-29 17:00:13,990 [INFO] Extracted page 7/8
+2026-03-29 17:00:14,234 [INFO] Extracted page 8/8
+2026-03-29 17:00:14,245 [INFO] Page 1: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p0.png'
+2026-03-29 17:00:14,474 [INFO] Page 1: Image loaded — 7016x4961px
+2026-03-29 17:00:14,474 [INFO]   Box 1: normalized coords = {'x1': 0.1623734672324319, 'y1': 0.5444500046759899, 'x2': 0.4462544569617746, 'y2': 0.8556838904955111}
+2026-03-29 17:00:14,474 [INFO]   Box 1: Crop shape = (1584, 2031, 3), region = (1119,2681)->(3150,4265) on (7016x4961) image
+2026-03-29 17:00:15,715 [INFO]   Box 1: Raw OCR text = 'L 100 A'
+2026-03-29 17:00:15,718 [INFO]   Box 2: normalized coords = {'x1': 0.16367567360733715, 'y1': 0.08772808939053868, 'x2': 0.41500150396404883, 'y2': 0.5002511096483655}
+2026-03-29 17:00:15,718 [INFO]   Box 2: Crop shape = (2086, 1803, 3), region = (1128,415)->(2931,2501) on (7016x4961) image
+2026-03-29 17:00:17,113 [INFO]   Box 2: Raw OCR text = 'I 110 I 1 k 100 100 100 100 120 00 ------- - -'
+2026-03-29 17:00:17,116 [INFO] Page 2: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p1.png'
+2026-03-29 17:00:17,379 [INFO] Page 2: Image loaded — 7016x4961px
+2026-03-29 17:00:17,380 [INFO]   Box 1: normalized coords = {'x1': 0.3537978043435024, 'y1': 0.21111667134265655, 'x2': 0.5842883327017303, 'y2': 0.6623137247496547}
+2026-03-29 17:00:17,380 [INFO]   Box 1: Crop shape = (2278, 1657, 3), region = (2462,1027)->(4119,3305) on (7016x4961) image
+2026-03-29 17:00:18,526 [INFO]   Box 1: Raw OCR text = '110 T 1 L - 70 , A 1 00 00'
+2026-03-29 17:00:18,530 [INFO]   Box 2: normalized coords = {'x1': 0.03866386161643397, 'y1': 0.2055918094642035, 'x2': 0.31994043859596616, 'y2': 0.6586304834973526}
+2026-03-29 17:00:18,531 [INFO]   Box 2: Crop shape = (2288, 2013, 3), region = (251,999)->(2264,3287) on (7016x4961) image
+2026-03-29 17:00:19,783 [INFO]   Box 2: Raw OCR text = '- - L 70 - - 00 T - 00 100 100 - 70 - F L - I - - 120'
+2026-03-29 17:00:19,785 [INFO] Page 3: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p2.png'
+2026-03-29 17:00:20,020 [INFO] Page 3: Image loaded — 7016x4961px
+2026-03-29 17:00:20,021 [INFO]   Box 1: normalized coords = {'x1': 0.13242272060961136, 'y1': 0.2578268876611418, 'x2': 0.3993750274651859, 'y2': 0.6482504604051565}
+2026-03-29 17:00:20,021 [INFO]   Box 1: Crop shape = (1976, 1913, 3), region = (909,1259)->(2822,3235) on (7016x4961) image
+2026-03-29 17:00:21,637 [INFO]   Box 1: Raw OCR text = 'I I 1 a I : I y : - I - 00 a - - I I - I I 050 I I 022'
+2026-03-29 17:00:21,647 [INFO]   Box 2: normalized coords = {'x1': 0.4306279804629117, 'y1': 0.2670349907918969, 'x2': 0.5660574434530569, 'y2': 0.6316758747697975}
+2026-03-29 17:00:21,648 [INFO]   Box 2: Crop shape = (1849, 990, 3), region = (3001,1304)->(3991,3153) on (7016x4961) image
+2026-03-29 17:00:22,859 [INFO]   Box 2: Raw OCR text = '- - 5 # PRIS - I 00 100 L - I 00 00 000'
+2026-03-29 17:00:22,863 [INFO] Page 4: Processing 3 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p3.png'
+2026-03-29 17:00:23,105 [INFO] Page 4: Image loaded — 7016x4961px
+2026-03-29 17:00:23,106 [INFO]   Box 1: normalized coords = {'x1': 0.008713114993613404, 'y1': 0.29097605893186007, 'x2': 0.2118573094788311, 'y2': 0.41436464088397795}
+2026-03-29 17:00:23,107 [INFO]   Box 1: Crop shape = (652, 1465, 3), region = (41,1423)->(1506,2075) on (7016x4961) image
+2026-03-29 17:00:24,507 [INFO]   Box 1: Raw OCR text = '/ 00 - I 00 00 100 5 vi 10 $ CB a - 06.5 I HOLES 9'
+2026-03-29 17:00:24,509 [INFO]   Box 2: normalized coords = {'x1': 0.27306100909937747, 'y1': 0.2375690607734807, 'x2': 0.47620520358459517, 'y2': 0.7366482504604053}
+2026-03-29 17:00:24,509 [INFO]   Box 2: Crop shape = (2516, 1466, 3), region = (1895,1158)->(3361,3674) on (7016x4961) image
+2026-03-29 17:00:26,722 [INFO]   Box 2: Raw OCR text = 'I - 1 I I / T - / 00 I I I I I - * : - I I I - - @ @ I / I I 00 I 00 / - - I - V 00 - A - / I I + I I 030 @ @ / / - - 080'
+2026-03-29 17:00:26,723 [INFO]   Box 3: normalized coords = {'x1': 0.48532064820893184, 'y1': 0.19638372389651135, 'x2': 0.6663273343207604, 'y2': 0.72124560234955}
+2026-03-29 17:00:26,725 [INFO]   Box 3: Crop shape = (2644, 1309, 3), region = (3385,954)->(4694,3598) on (7016x4961) image
+2026-03-29 17:00:28,101 [INFO]   Box 3: Raw OCR text = '- I - i - I 046 - 00 I 00 - - A - 1 J 12 - 00 100 Y f 20'
+2026-03-29 17:00:28,114 [INFO] Page 5: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p4.png'
+2026-03-29 17:00:28,376 [INFO] Page 5: Image loaded — 7016x4961px
+2026-03-29 17:00:28,376 [INFO]   Box 1: normalized coords = {'x1': 0.15716464173281097, 'y1': 0.0865561694290976, 'x2': 0.4892272673336476, 'y2': 0.5616942909760589}
+2026-03-29 17:00:28,376 [INFO]   Box 1: Crop shape = (2397, 2370, 3), region = (1082,409)->(3452,2806) on (7016x4961) image
+2026-03-29 17:00:30,085 [INFO]   Box 1: Raw OCR text = '00 - 050 - - t I 080 - A - I I I I I I I I - - I I I F - 00 - - 4 I -'
+2026-03-29 17:00:30,090 [INFO]   Box 2: normalized coords = {'x1': 0.06991681461415976, 'y1': 0.5837937384898712, 'x2': 0.45016107608649036, 'y2': 0.9208103130755065}
+2026-03-29 17:00:30,091 [INFO]   Box 2: Crop shape = (1712, 2708, 3), region = (470,2876)->(3178,4588) on (7016x4961) image
+2026-03-29 17:00:31,262 [INFO]   Box 2: Raw OCR text = '000 50 + * 00 I I I I I I I I I'
+2026-03-29 17:00:31,264 [INFO] Page 6: Processing 1 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p5.png'
+2026-03-29 17:00:31,487 [INFO] Page 6: Image loaded — 7016x4961px
+2026-03-29 17:00:31,488 [INFO]   Box 1: normalized coords = {'x1': 0.18581318198072627, 'y1': 0.2523020257826888, 'x2': 0.6233545239488875, 'y2': 0.6206261510128914}
+2026-03-29 17:00:31,488 [INFO]   Box 1: Crop shape = (1867, 3110, 3), region = (1283,1231)->(4393,3098) on (7016x4961) image
+2026-03-29 17:00:33,145 [INFO]   Box 1: Raw OCR text = 'R1.5 T L T I Rail : I I I I I I I I I i 12 MBX1.0 N - I L . 1 L 18 - A - + H 100 - 100 9 20'
+2026-03-29 17:00:33,146 [INFO] Page 7: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p6.png'
+2026-03-29 17:00:33,371 [INFO] Page 7: Image loaded — 7016x4961px
+2026-03-29 17:00:33,371 [INFO]   Box 1: normalized coords = {'x1': 0.0555925444902021, 'y1': 0.04352919436291437, 'x2': 0.5191780139564681, 'y2': 0.44500249086383525}
+2026-03-29 17:00:33,372 [INFO]   Box 1: Crop shape = (2032, 3292, 3), region = (370,195)->(3662,2227) on (7016x4961) image
+2026-03-29 17:00:34,768 [INFO]   Box 1: Raw OCR text = '09 < - L 100 T'
+2026-03-29 17:00:34,771 [INFO]   Box 2: normalized coords = {'x1': 0.08554329111302265, 'y1': 0.4445002434662034, 'x2': 0.5530353797040044, 'y2': 0.9712037425453931}
+2026-03-29 17:00:34,772 [INFO]   Box 2: Crop shape = (2653, 3320, 3), region = (580,2185)->(3900,4838) on (7016x4961) image
+2026-03-29 17:00:36,410 [INFO]   Box 2: Raw OCR text = '08 - - T 40 50 L A 30 100 L - 4 L'
+2026-03-29 17:00:36,415 [INFO] Page 8: Processing 2 box(es) from 'C:\Users\vedan\AppData\Local\Temp\20260329_165741_DRAWINGS_ON_BASIC_FEATURES.pdf_p7.png'
+2026-03-29 17:00:36,668 [INFO] Page 8: Image loaded — 7016x4961px
+2026-03-29 17:00:36,669 [INFO]   Box 1: normalized coords = {'x1': 0.47880961633440566, 'y1': 0.4682738583390884, 'x2': 0.7001847000682967, 'y2': 0.7666163997755525}
+2026-03-29 17:00:36,669 [INFO]   Box 1: Crop shape = (1520, 1593, 3), region = (3339,2303)->(4932,3823) on (7016x4961) image
+2026-03-29 17:00:38,461 [INFO]   Box 1: Raw OCR text = '- 000 I - - 90 04.6 - J - - I Pasum I - I H I I I - I I - - A 00 00 pausannant - - - - I L'
+2026-03-29 17:00:38,472 [INFO]   Box 2: normalized coords = {'x1': 0.041268274366244445, 'y1': 0.16808972437737396, 'x2': 0.4084904720895226, 'y2': 0.7684580485026042}
+2026-03-29 17:00:38,476 [INFO]   Box 2: Crop shape = (3019, 2616, 3), region = (269,813)->(2885,3832) on (7016x4961) image
+2026-03-29 17:00:40,332 [INFO]   Box 2: Raw OCR text = 'L 73 T I I I I - I I I / / - I R20 - I I 48 I I I I I L'
+2026-03-29 17:00:40,336 [INFO] Total dimensions extracted: 44
+2026-03-29 17:00:40,401 [INFO] 127.0.0.1 - - [29/Mar/2026 17:00:40] "POST /api/process HTTP/1.1" 200 -
+2026-03-29 17:05:23,335 [INFO] 127.0.0.1 - - [29/Mar/2026 17:05:23] "GET /api/download/dimensions_20260329_170040.xlsx HTTP/1.1" 200 -
